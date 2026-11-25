@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Finanze Personali</title>
+  <!-- PWA / iOS App Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Finanze" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- Librerie esterne -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #F9FAFB; color: #111827; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 9999px; }
+  </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+  <!-- ==================== SCHERMATA LOGIN ==================== -->
+  <div id="auth-screen" class="fixed inset-0 z-50 bg-[#F9FAFB] flex items-center justify-center p-4">
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm w-full max-w-sm p-8">
+      <div class="flex items-center gap-2.5 mb-6">
+        <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center font-bold">F</div>
+        <div>
+          <h1 class="text-lg font-semibold text-gray-900 leading-tight">Finanze Personali</h1>
+          <p class="text-xs text-gray-500">Accesso privato cloud</p>
+        </div>
+      </div>
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" id="login-email" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900" placeholder="tu@email.com" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
+          <input type="password" id="login-password" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900" placeholder="••••••••" />
+        </div>
+        <p id="login-error" class="text-xs text-red-600 hidden"></p>
+        <button type="submit" id="login-btn" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 rounded-lg transition">Accedi</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== APP PRINCIPALE ==================== -->
+  <div id="app-screen" class="hidden flex-1 flex h-full overflow-hidden">
+
+    <!-- RAIL ICONE SINISTRA (Desktop) -->
+    <aside class="hidden md:flex flex-col items-center w-14 bg-white border-r border-gray-200 py-4 justify-between shrink-0">
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center font-bold text-sm mb-3">F</div>
+        <button onclick="switchTab('dashboard')" data-nav="dashboard" title="Dashboard" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></button>
+        <button onclick="switchTab('transactions')" data-nav="transactions" title="Transazioni" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="arrow-left-right" class="w-4 h-4"></i></button>
+        <button onclick="switchTab('recurring')" data-nav="recurring" title="Ricorrenze" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="repeat" class="w-4 h-4"></i></button>
+        <button onclick="switchTab('import')" data-nav="import" title="Importa Banca (IA)" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="file-up" class="w-4 h-4"></i></button>
+        <button onclick="switchTab('simulator')" data-nav="simulator" title="Simulatore PAC" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="trending-up" class="w-4 h-4"></i></button>
+        <button onclick="switchTab('ai')" data-nav="ai" title="Assistente IA" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="sparkles" class="w-4 h-4"></i></button>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <button onclick="switchTab('settings')" data-nav="settings" title="Impostazioni" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="settings" class="w-4 h-4"></i></button>
+        <button onclick="logout()" title="Esci" class="p-2.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+      </div>
+    </aside>
+
+    <!-- SIDEBAR CONTI STILE MAYBE (Desktop) -->
+    <aside class="hidden lg:flex flex-col w-72 bg-white border-r border-gray-200 shrink-0">
+      <div class="p-4 border-b border-gray-100">
+        <div class="grid grid-cols-3 bg-gray-100 p-1 rounded-lg text-xs font-medium mb-3">
+          <button onclick="setSidebarFilter('assets')" id="sf-assets" class="py-1 rounded-md bg-white shadow-sm text-gray-900">Asset</button>
+          <button onclick="setSidebarFilter('debts')" id="sf-debts" class="py-1 rounded-md text-gray-500">Debiti</button>
+          <button onclick="setSidebarFilter('all')" id="sf-all" class="py-1 rounded-md text-gray-500">Tutti</button>
+        </div>
+        <button onclick="openAccountModal()" class="w-full flex items-center gap-2 text-xs font-medium text-gray-600 hover:text-gray-900 py-1.5 px-2 rounded-lg hover:bg-gray-50 transition">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nuovo conto / asset
+        </button>
+      </div>
+      <div id="sidebar-accounts" class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-4">
+        <!-- Popolato da JS -->
+      </div>
+    </aside>
+
+    <!-- AREA PRINCIPALE -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Topbar Mobile / Breadcrumb Desktop -->
+      <header class="h-14 bg-white border-b border-gray-200 px-4 md:px-6 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2 text-xs text-gray-500">
+          <span class="font-semibold text-gray-900 md:hidden">Finanze</span>
+          <span class="hidden md:inline">Home</span>
+          <span class="hidden md:inline">›</span>
+          <span id="breadcrumb-title" class="font-medium text-gray-900">Dashboard</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openAccountModal()" class="lg:hidden text-xs font-medium px-2.5 py-1.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">+ Conto</button>
+          <button onclick="openTxModal()" class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nuovo
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENUTO SCROLLABILE -->
+      <div class="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8 pb-24 md:pb-8">
+        <div class="max-w-5xl mx-auto">
+
+          <!-- ========== TAB 1: DASHBOARD (STILE MAYBE) ========== -->
+          <section id="tab-dashboard" class="space-y-6">
+            <div>
+              <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">Bentornato</h2>
+              <p class="text-sm text-gray-500">Ecco la situazione aggiornata delle tue finanze</p>
+            </div>
+
+            <!-- Card Net Worth + Grafico -->
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 shadow-xs">
+              <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+                <div>
+                  <p class="text-xs font-medium text-gray-500 mb-1">Patrimonio Netto (Net Worth)</p>
+                  <h3 id="dash-networth" class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">€ 0,00</h3>
+                  <p id="dash-monthly-delta" class="text-xs text-gray-500 mt-1.5">Calcolo variazione mensile...</p>
+                </div>
+                <div class="flex items-center gap-4 text-right">
+                  <div>
+                    <p class="text-[11px] text-gray-500">Entrate Mese</p>
+                    <p id="dash-month-in" class="text-sm font-semibold text-emerald-600">+€ 0,00</p>
+                  </div>
+                  <div>
+                    <p class="text-[11px] text-gray-500">Uscite Mese</p>
+                    <p id="dash-month-out" class="text-sm font-semibold text-red-600">-€ 0,00</p>
+                  </div>
+                </div>
+              </div>
+              <div class="h-56 w-full">
+                <canvas id="networth-chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Card Allocazione Asset (Barra + Tabella stile Maybe) -->
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 shadow-xs">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-semibold text-gray-900">Asset <span id="dash-total-assets" class="text-gray-400 font-normal ml-1">· € 0,00</span></h3>
+              </div>
+
+              <!-- Barra percentuale segmentata -->
+              <div id="allocation-bar" class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden flex gap-0.5 mb-3"></div>
+              <div id="allocation-legend" class="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-gray-600 mb-5"></div>
+
+              <!-- Tabella categorie -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="border-b border-gray-100 text-[11px] font-medium text-gray-400 uppercase">
+                      <th class="py-2">Categoria / Conto</th>
+                      <th class="py-2 w-40">Peso</th>
+                      <th class="py-2 text-right">Valore</th>
+                    </tr>
+                  </thead>
+                  <tbody id="allocation-table" class="divide-y divide-gray-100 text-sm"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Lista rapida conti visibile su Mobile -->
+            <div class="lg:hidden bg-white border border-gray-200 rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900">I tuoi Conti</h3>
+                <button onclick="openAccountModal()" class="text-xs font-medium text-gray-600">+ Aggiungi</button>
+              </div>
+              <div id="mobile-accounts-list" class="space-y-2"></div>
+            </div>
+          </section>
+
+          <!-- ========== TAB 2: TRANSAZIONI ========== -->
+          <section id="tab-transactions" class="hidden space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900">Transazioni</h2>
+                <p class="text-xs text-gray-500">Storico completo entrate, uscite e trasferimenti</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="bulk-delete-btn" onclick="bulkDeleteTransactions()" class="hidden text-xs font-medium px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition">Elimina selezionati</button>
+                <button onclick="openTxModal()" class="text-xs font-medium px-3 py-2 bg-gray-900 text-white rounded-lg">+ Nuova</button>
+              </div>
+            </div>
+
+            <!-- Filtri -->
+            <div class="bg-white border border-gray-200 rounded-xl p-3 flex flex-wrap gap-2">
+              <input type="text" id="filter-search" oninput="renderTransactions()" placeholder="Cerca descrizione o categoria..." class="flex-1 min-w-[180px] text-xs px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-900" />
+              <select id="filter-account" onchange="renderTransactions()" class="text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white">
+                <option value="all">Tutti i conti</option>
+              </select>
+              <select id="filter-type" onchange="renderTransactions()" class="text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white">
+                <option value="all">Tutti i tipi</option>
+                <option value="income">Entrate</option>
+                <option value="expense">Uscite</option>
+                <option value="transfer">Trasferimenti</option>
+              </select>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-[11px] font-medium text-gray-500 uppercase">
+                      <th class="p-3 w-8"><input type="checkbox" id="select-all-tx" onchange="toggleAllTx(this)" /></th>
+                      <th class="p-3">Data</th>
+                      <th class="p-3">Descrizione</th>
+                      <th class="p-3">Conto</th>
+                      <th class="p-3">Categoria</th>
+                      <th class="p-3 text-right">Importo</th>
+                      <th class="p-3 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tx-table-body" class="divide-y divide-gray-100 text-sm"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========== TAB 3: RICORRENZE ========== -->
+          <section id="tab-recurring" class="hidden space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900">Spese & Entrate Ricorrenti</h2>
+                <p class="text-xs text-gray-500">Stipendio, PAC mensile, abbonamenti con date di inizio e fine</p>
+              </div>
+              <button onclick="applyDueRecurring()" class="text-xs font-medium px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-1.5">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i> Applica ricorrenze del mese
+              </button>
+            </div>
+
+            <!-- Form Nuova Ricorrenza -->
+            <form id="recurring-form" class="bg-white border border-gray-200 rounded-2xl p-5 grid grid-cols-1 md:grid-cols-4 gap-3">
+              <input type="text" id="rec-desc" required placeholder="Descrizione (es. PAC Trade Republic)" class="md:col-span-2 text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              <select id="rec-type" onchange="toggleRecTarget()" class="text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white">
+                <option value="expense">Uscita</option>
+                <option value="income">Entrata</option>
+                <option value="transfer">Trasferimento</option>
+              </select>
+              <input type="number" step="0.01" id="rec-amount" required placeholder="Importo (€)" class="text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+
+              <select id="rec-account" required class="text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white"></select>
+              <select id="rec-target" class="hidden text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white"></select>
+              <input type="text" id="rec-cat" placeholder="Categoria (es. PAC)" class="text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              <input type="number" min="1" max="31" id="rec-day" required placeholder="Giorno del mese (1-31)" class="text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+
+              <div>
+                <label class="block text-[10px] text-gray-400 mb-0.5">Data Inizio</label>
+                <input type="date" id="rec-start" required class="w-full text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-400 mb-0.5">Data Fine (opzionale)</label>
+                <input type="date" id="rec-end" class="w-full text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              </div>
+              <div class="md:col-span-2 flex items-end">
+                <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium py-2.5 rounded-lg">Salva Regola Ricorrente</button>
+              </div>
+            </form>
+
+            <div id="recurring-list" class="space-y-2"></div>
+          </section>
+
+          <!-- ========== TAB 4: IMPORTA BANCA CON IA (UNICREDIT / TRADE REPUBLIC) ========== -->
+          <section id="tab-import" class="hidden space-y-5">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900">Importazione Smart (UniCredit & Trade Republic)</h2>
+              <p class="text-xs text-gray-500">Carica l'estratto conto PDF di Trade Republic o il file CSV/PDF di UniCredit: Gemini estrae e deduplica i movimenti.</p>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1">Conto di destinazione</label>
+                  <select id="import-account" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg bg-white"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1">File Estratto Conto (PDF o CSV)</label>
+                  <input type="file" id="import-file" accept=".pdf,.csv,.txt" class="w-full text-xs text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-800 hover:file:bg-gray-200" />
+                </div>
+              </div>
+              <button onclick="parseBankFileWithAI()" id="import-analyze-btn" class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium px-4 py-2.5 rounded-lg flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Analizza con Gemini IA
+              </button>
+              <p id="import-status" class="text-xs text-gray-500 hidden"></p>
+            </div>
+
+            <div id="import-preview-box" class="hidden bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-900">Anteprima Movimenti Estratti</h3>
+                <button onclick="confirmBankImport()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-4 py-2 rounded-lg">Importa Selezionati</button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead>
+                    <tr class="border-b border-gray-200 text-gray-500">
+                      <th class="p-2">Importa</th>
+                      <th class="p-2">Data</th>
+                      <th class="p-2">Descrizione</th>
+                      <th class="p-2">Categoria</th>
+                      <th class="p-2 text-right">Importo</th>
+                      <th class="p-2">Stato</th>
+                    </tr>
+                  </thead>
+                  <tbody id="import-preview-body" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========== TAB 5: SIMULATORE PAC & PROIEZIONI ========== -->
+          <section id="tab-simulator" class="hidden space-y-5">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900">Simulatore PAC & Proiezioni</h2>
+              <p class="text-xs text-gray-500">Calcola la crescita del tuo patrimonio nel tempo con interesse composto</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Capitale Iniziale (€)</label>
+                <input type="number" id="sim-initial" value="5000" oninput="runSimulator()" class="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg" />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Versamento Mensile (€)</label>
+                <input type="number" id="sim-monthly" value="300" oninput="runSimulator()" class="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg" />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Rendimento Annuo (%)</label>
+                <input type="number" step="0.5" id="sim-rate" value="7" oninput="runSimulator()" class="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg" />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Anni</label>
+                <input type="number" min="1" max="40" id="sim-years" value="10" oninput="runSimulator()" class="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg" />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-white border border-gray-200 rounded-xl p-4">
+                <p class="text-xs text-gray-500">Totale Versato</p>
+                <p id="sim-out-invested" class="text-xl font-bold text-gray-900 mt-1">€ 0</p>
+              </div>
+              <div class="bg-white border border-gray-200 rounded-xl p-4">
+                <p class="text-xs text-gray-500">Guadagno Composto</p>
+                <p id="sim-out-gain" class="text-xl font-bold text-emerald-600 mt-1">+€ 0</p>
+              </div>
+              <div class="bg-white border border-gray-200 rounded-xl p-4">
+                <p class="text-xs text-gray-500">Valore Finale Stimato</p>
+                <p id="sim-out-total" class="text-xl font-bold text-indigo-600 mt-1">€ 0</p>
+              </div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 h-72">
+              <canvas id="sim-chart"></canvas>
+            </div>
+          </section>
+
+          <!-- ========== TAB 6: ASSISTENTE IA (CFO PERSONALE) ========== -->
+          <section id="tab-ai" class="hidden flex flex-col h-[calc(100vh-11rem)]">
+            <div class="mb-3">
+              <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-indigo-600"></i> Assistente Finanziario IA</h2>
+              <p class="text-xs text-gray-500">Legge in tempo reale i tuoi conti, le spese recenti e le ricorrenze su Supabase.</p>
+            </div>
+            <div id="ai-chat-box" class="flex-1 bg-white border border-gray-200 rounded-2xl p-4 overflow-y-auto scrollbar-thin space-y-3 mb-3">
+              <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 text-xs text-gray-600 max-w-xl">
+                Ciao! Chiedimi qualsiasi cosa sulle tue finanze: analisi spese del mese, quanto puoi risparmiare, proiezioni per acquisti futuri o consigli di budget.
+              </div>
+            </div>
+            <form id="ai-chat-form" class="flex gap-2">
+              <input type="text" id="ai-input" required placeholder="Es. Quanto ho speso questo mese e quanto posso accantonare?" class="flex-1 bg-white border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+              <button type="submit" id="ai-send-btn" class="bg-gray-900 hover:bg-gray-800 text-white px-5 rounded-xl text-sm font-medium transition">Invia</button>
+            </form>
+          </section>
+
+          <!-- ========== TAB 7: IMPOSTAZIONI ========== -->
+          <section id="tab-settings" class="hidden space-y-5 max-w-xl">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900">Impostazioni</h2>
+              <p class="text-xs text-gray-500">Configurazione chiave Gemini (salvata solo in locale su questo dispositivo)</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+              <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Google Gemini API Key</label>
+                <input type="password" id="setting-gemini-key" placeholder="AIza..." class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
+                <p class="text-[11px] text-gray-400 mt-1">Usata per la chat IA e l'importazione PDF/CSV di UniCredit e Trade Republic. Non viene mai caricata su GitHub.</p>
+              </div>
+              <button onclick="saveSettings()" class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium px-4 py-2 rounded-lg">Salva Impostazioni</button>
+              <span id="settings-saved-msg" class="text-xs text-emerald-600 ml-2 hidden">Salvato!</span>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-900">Sessione attiva</p>
+                <p id="settings-user-email" class="text-xs text-gray-500"></p>
+              </div>
+              <button onclick="logout()" class="text-xs font-medium text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50">Disconnetti</button>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- BOTTOM NAV MOBILE (iPhone) -->
+      <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 flex justify-around py-2 pb-safe z-30">
+        <button onclick="switchTab('dashboard')" data-nav="dashboard" class="nav-btn flex flex-col items-center text-[10px] text-gray-500 gap-0.5"><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Home</button>
+        <button onclick="switchTab('transactions')" data-nav="transactions" class="nav-btn flex flex-col items-center text-[10px] text-gray-500 gap-0.5"><i data-lucide="arrow-left-right" class="w-4 h-4"></i>Movimenti</button>
+        <button onclick="switchTab('import')" data-nav="import" class="nav-btn flex flex-col items-center text-[10px] text-gray-500 gap-0.5"><i data-lucide="file-up" class="w-4 h-4"></i>Importa</button>
+        <button onclick="switchTab('ai')" data-nav="ai" class="nav-btn flex flex-col items-center text-[10px] text-gray-500 gap-0.5"><i data-lucide="sparkles" class="w-4 h-4"></i>IA</button>
+        <button onclick="switchTab('settings')" data-nav="settings" class="nav-btn flex flex-col items-center text-[10px] text-gray-500 gap-0.5"><i data-lucide="settings" class="w-4 h-4"></i>Altro</button>
+      </nav>
+    </main>
+  </div>
+
+  <!-- ==================== MODALE NUOVO CONTO ==================== -->
+  <div id="account-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-base font-semibold">Nuovo Conto / Asset</h3>
+        <button onclick="closeModal('account-modal')" class="text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form id="account-form" class="space-y-3">
+        <input type="text" id="acc-name" required placeholder="Nome (es. UniCredit, Trade Republic Cash, PAC)" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
+        <select id="acc-category" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg bg-white">
+          <option value="cash">Liquidità (Cash)</option>
+          <option value="investments">Investimenti (PAC / Azioni / ETF)</option>
+          <option value="vehicles">Veicoli</option>
+          <option value="other">Altri Asset</option>
+          <option value="debt">Debiti / Carte</option>
+        </select>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Saldo attuale (€)</label>
+            <input type="number" step="0.01" id="acc-balance" required value="0" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Tasso annuo % (opz.)</label>
+            <input type="number" step="0.01" id="acc-rate" value="0" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 rounded-lg">Salva Conto</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODALE NUOVA TRANSAZIONE ==================== -->
+  <div id="tx-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-base font-semibold">Nuova Operazione</h3>
+        <button onclick="closeModal('tx-modal')" class="text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form id="tx-form" class="space-y-3">
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="setTxType('expense')" id="tx-btn-expense" class="py-2 text-xs font-medium rounded-lg border bg-gray-900 text-white">Uscita</button>
+          <button type="button" onclick="setTxType('income')" id="tx-btn-income" class="py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-600">Entrata</button>
+          <button type="button" onclick="setTxType('transfer')" id="tx-btn-transfer" class="py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-600">Trasferimento</button>
+        </div>
+        <input type="hidden" id="tx-type" value="expense" />
+        <input type="number" step="0.01" id="tx-amount" required placeholder="Importo (€)" class="w-full text-lg font-semibold px-3 py-2 border border-gray-300 rounded-lg" />
+        <select id="tx-account" required class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg bg-white"></select>
+        <select id="tx-target-account" class="hidden w-full text-sm px-3 py-2 border border-gray-300 rounded-lg bg-white"></select>
+        <input type="text" id="tx-desc" required placeholder="Descrizione (es. Benzina, Stipendio, PAC)" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
+        <div class="grid grid-cols-2 gap-3">
+          <input type="text" id="tx-category" placeholder="Categoria" value="Generale" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
+          <input type="date" id="tx-date" required class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
+        </div>
+        <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 rounded-lg">Salva Movimento</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== LOGICA APPLICAZIONE ==================== -->
+  <script>
+    // =========================================================================
+    // 1. INCOLLA QUI I TUOI DATI SUPABASE (dal Blocco 1)
+    // =========================================================================
+    const SUPABASE_URL = 'https://vnocfnqtmbcshakryois.supabase.co/rest/v1/';
+    const SUPABASE_ANON_KEY = 'sb_publishable_GwZ_fueoCHJNd8j2XqY0Fw_TqNxsTsO';
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Stato globale
+    let currentUser = null;
+    let accounts = [];
+    let transactions = [];
+    let recurringRules = [];
+    let sidebarFilter = 'assets';
+    let parsedImportRows = [];
+    let networthChart = null;
+    let simChart = null;
+
+    const CAT_META = {
+      cash:        { label: 'Liquidità',    color: '#3B82F6' },
+      investments: { label: 'Investimenti', color: '#6366F1' },
+      vehicles:    { label: 'Veicoli',      color: '#10B981' },
+      other:       { label: 'Altri Asset',  color: '#F59E0B' },
+      debt:        { label: 'Debiti',       color: '#EF4444' }
+    };
+
+    const fmtEur = (n) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(n) || 0);
+
+    // ==================== AUTH & AVVIO ====================
+    async function init() {
+      lucide.createIcons();
+      document.getElementById('tx-date').valueAsDate = new Date();
+      document.getElementById('rec-start').valueAsDate = new Date();
+      document.getElementById('setting-gemini-key').value = localStorage.getItem('gemini_api_key') || '';
+
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        onAuthenticated(session.user);
+      }
+      sb.auth.onAuthStateChange((_event, session) => {
+        if (session) onAuthenticated(session.user);
+        else {
+          document.getElementById('auth-screen').classList.remove('hidden');
+          document.getElementById('app-screen').classList.add('hidden');
+        }
+      });
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const errEl = document.getElementById('login-error');
+      errEl.classList.add('hidden');
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) {
+        errEl.textContent = 'Credenziali non valide o errore di connessione.';
+        errEl.classList.remove('hidden');
+      }
+    });
+
+    async function logout() {
+      await sb.auth.signOut();
+    }
+
+    async function onAuthenticated(user) {
+      currentUser = user;
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('app-screen').classList.remove('hidden');
+      document.getElementById('settings-user-email').textContent = user.email;
+      await loadAllData();
+      switchTab('dashboard');
+    }
+
+    async function loadAllData() {
+      const [accRes, txRes, recRes] = await Promise.all([
+        sb.from('accounts').select('*').order('created_at', { ascending: true }),
+        sb.from('transactions').select('*').order('date', { ascending: false }).order('created_at', { ascending: false }),
+        sb.from('recurring_rules').select('*').order('day_of_month', { ascending: true })
+      ]);
+      accounts = accRes.data || [];
+      transactions = txRes.data || [];
+      recurringRules = recRes.data || [];
+
+      populateAccountSelects();
+      renderSidebar();
+      renderDashboard();
+      renderTransactions();
+      renderRecurring();
+      runSimulator();
+      lucide.createIcons();
+    }
+
+    // ==================== NAVIGAZIONE ====================
+    function switchTab(tab) {
+      document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      const titles = {
+        dashboard: 'Dashboard', transactions: 'Transazioni', recurring: 'Ricorrenze',
+        import: 'Importa Banca', simulator: 'Simulatore PAC', ai: 'Assistente IA', settings: 'Impostazioni'
+      };
+      document.getElementById('breadcrumb-title').textContent = titles[tab] || tab;
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        const active = b.dataset.nav === tab;
+        b.classList.toggle('bg-gray-100', active);
+        b.classList.toggle('text-gray-900', active);
+        b.classList.toggle('text-gray-500', !active);
+      });
+      if (tab === 'simulator') runSimulator();
+    }
+
+    // ==================== SIDEBAR STILE MAYBE ====================
+    function setSidebarFilter(f) {
+      sidebarFilter = f;
+      ['assets', 'debts', 'all'].forEach(k => {
+        const btn = document.getElementById(`sf-${k}`);
+        btn.className = k === f ? 'py-1 rounded-md bg-white shadow-sm text-gray-900' : 'py-1 rounded-md text-gray-500';
+      });
+      renderSidebar();
+    }
+
+    function renderSidebar() {
+      const container = document.getElementById('sidebar-accounts');
+      const mobContainer = document.getElementById('mobile-accounts-list');
+      const filtered = accounts.filter(a => {
+        if (sidebarFilter === 'assets') return a.category !== 'debt';
+        if (sidebarFilter === 'debts') return a.category === 'debt';
+        return true;
+      });
+
+      const grouped = {};
+      filtered.forEach(a => {
+        if (!grouped[a.category]) grouped[a.category] = [];
+        grouped[a.category].push(a);
+      });
+
+      container.innerHTML = Object.keys(grouped).length === 0
+        ? `<p class="text-xs text-gray-400 text-center py-6">Nessun conto. Clicca "+ Nuovo conto".</p>`
+        : Object.entries(grouped).map(([cat, list]) => {
+            const sum = list.reduce((s, x) => s + Number(x.balance), 0);
+            const meta = CAT_META[cat] || { label: cat, color: '#6B7280' };
+            return `
+              <div>
+                <div class="flex items-center justify-between px-2 py-1 text-xs font-medium text-gray-500">
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${meta.color}"></span>${meta.label}</span>
+                  <span class="font-semibold text-gray-900">${fmtEur(sum)}</span>
+                </div>
+                <div class="mt-1 space-y-0.5">
+                  ${list.map(acc => `
+                    <div class="group flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-gray-50 text-xs">
+                      <span class="text-gray-700 truncate">${acc.name}</span>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-medium text-gray-900">${fmtEur(acc.balance)}</span>
+                        <button onclick="deleteAccount('${acc.id}')" title="Elimina" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500">×</button>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+      mobContainer.innerHTML = accounts.length === 0
+        ? `<p class="text-xs text-gray-400">Nessun conto aggiunto.</p>`
+        : accounts.map(acc => `
+            <div class="flex items-center justify-between py-1.5 border-b border-gray-50 text-xs">
+              <span class="font-medium text-gray-800">${acc.name}</span>
+              <span class="font-semibold">${fmtEur(acc.balance)}</span>
+            </div>
+          `).join('');
+    }
+
+    // ==================== DASHBOARD & GRAFICO NET WORTH ====================
+    function renderDashboard() {
+      const assetsSum = accounts.filter(a => a.category !== 'debt').reduce((s, a) => s + Number(a.balance), 0);
+      const debtsSum = accounts.filter(a => a.category === 'debt').reduce((s, a) => s + Number(a.balance), 0);
+      const netWorth = assetsSum - debtsSum;
+
+      document.getElementById('dash-networth').textContent = fmtEur(netWorth);
+      document.getElementById('dash-total-assets').textContent = `· ${fmtEur(assetsSum)}`;
+
+      // Flusso mese corrente
+      const nowYM = new Date().toISOString().slice(0, 7);
+      const monthTx = transactions.filter(t => t.date.startsWith(nowYM));
+      const mIn = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+      const mOut = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+      const delta = mIn - mOut;
+
+      document.getElementById('dash-month-in').textContent = `+${fmtEur(mIn)}`;
+      document.getElementById('dash-month-out').textContent = `-${fmtEur(mOut)}`;
+      const deltaEl = document.getElementById('dash-monthly-delta');
+      deltaEl.innerHTML = `<span class="${delta >= 0 ? 'text-emerald-600' : 'text-red-600'} font-medium">${delta >= 0 ? '+' : ''}${fmtEur(delta)}</span> flusso netto questo mese`;
+
+      // Allocazione Asset (Barra + Tabella stile Maybe)
+      const catTotals = {};
+      accounts.filter(a => a.category !== 'debt').forEach(a => {
+        catTotals[a.category] = (catTotals[a.category] || 0) + Number(a.balance);
+      });
+
+      const barEl = document.getElementById('allocation-bar');
+      const legEl = document.getElementById('allocation-legend');
+      const tabEl = document.getElementById('allocation-table');
+
+      const entries = Object.entries(catTotals).filter(([_, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+      barEl.innerHTML = entries.map(([cat, val]) => {
+        const pct = assetsSum > 0 ? (val / assetsSum * 100) : 0;
+        return `<div style="width:${pct}%; background:${CAT_META[cat]?.color || '#9CA3AF'}" class="h-full"></div>`;
+      }).join('');
+
+      legEl.innerHTML = entries.map(([cat, val]) => {
+        const pct = assetsSum > 0 ? (val / assetsSum * 100).toFixed(1) : 0;
+        return `<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${CAT_META[cat]?.color}"></span>${CAT_META[cat]?.label} <strong>${pct}%</strong></span>`;
+      }).join('');
+
+      tabEl.innerHTML = entries.map(([cat, val]) => {
+        const pct = assetsSum > 0 ? (val / assetsSum * 100).toFixed(1) : 0;
+        return `
+          <tr>
+            <td class="py-3 font-medium text-gray-800">${CAT_META[cat]?.label || cat}</td>
+            <td class="py-3">
+              <div class="flex items-center gap-2">
+                <div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full" style="width:${pct}%; background:${CAT_META[cat]?.color}"></div>
+                </div>
+                <span class="text-xs text-gray-500">${pct}%</span>
+              </div>
+            </td>
+            <td class="py-3 text-right font-semibold text-gray-900">${fmtEur(val)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Grafico andamento Net Worth (ultimi 30 giorni ricostruiti a ritroso)
+      const labels = [];
+      const points = [];
+      let runningNW = netWorth;
+      const txByDate = {};
+      transactions.forEach(t => {
+        if (t.type === 'transfer') return;
+        const deltaDay = t.type === 'income' ? Number(t.amount) : -Number(t.amount);
+        txByDate[t.date] = (txByDate[t.date] || 0) + deltaDay;
+      });
+
+      const tempPoints = [];
+      for (let i = 0; i < 30; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const iso = d.toISOString().slice(0, 10);
+        tempPoints.unshift({ label: iso.slice(5), val: runningNW });
+        runningNW -= (txByDate[iso] || 0);
+      }
+
+      const ctx = document.getElementById('networth-chart').getContext('2d');
+      if (networthChart) networthChart.destroy();
+      networthChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: tempPoints.map(p => p.label),
+          datasets: [{
+            data: tempPoints.map(p => p.val),
+            borderColor: '#10B981',
+            backgroundColor: 'rgba(16, 185, 129, 0.06)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0,
+            pointHoverRadius: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtEur(c.raw) } } },
+          scales: {
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 6, font: { size: 10 } } },
+            y: { grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 }, callback: v => '€' + v } }
+          }
+        }
+      });
+    }
+
+    // ==================== GESTIONE CONTI ====================
+    function openAccountModal() { document.getElementById('account-modal').classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    document.getElementById('account-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const { error } = await sb.from('accounts').insert({
+        name: document.getElementById('acc-name').value.trim(),
+        category: document.getElementById('acc-category').value,
+        balance: parseFloat(document.getElementById('acc-balance').value) || 0,
+        interest_rate: parseFloat(document.getElementById('acc-rate').value) || 0
+      });
+      if (!error) {
+        e.target.reset();
+        closeModal('account-modal');
+        await loadAllData();
+      } else alert(error.message);
+    });
+
+    async function deleteAccount(id) {
+      if (!confirm('Eliminare questo conto e tutte le sue transazioni?')) return;
+      await sb.from('accounts').delete().eq('id', id);
+      await loadAllData();
+    }
+
+    function populateAccountSelects() {
+      const opts = accounts.map(a => `<option value="${a.id}">${a.name} (${fmtEur(a.balance)})</option>`).join('');
+      ['tx-account', 'tx-target-account', 'rec-account', 'rec-target', 'import-account'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = opts || '<option value="">Crea prima un conto</option>';
+      });
+      const filterEl = document.getElementById('filter-account');
+      filterEl.innerHTML = '<option value="all">Tutti i conti</option>' + opts;
+    }
+
+    // ==================== TRANSAZIONI & AGGIORNAMENTO SALDI ====================
+    function openTxModal() {
+      if (accounts.length === 0) { alert('Crea prima almeno un conto (es. UniCredit o Trade Republic).'); return openAccountModal(); }
+      document.getElementById('tx-modal').classList.remove('hidden');
+    }
+
+    function setTxType(type) {
+      document.getElementById('tx-type').value = type;
+      ['expense', 'income', 'transfer'].forEach(t => {
+        const b = document.getElementById(`tx-btn-${t}`);
+        b.className = t === type
+          ? 'py-2 text-xs font-medium rounded-lg border bg-gray-900 text-white'
+          : 'py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-600';
+      });
+      document.getElementById('tx-target-account').classList.toggle('hidden', type !== 'transfer');
+    }
+
+    async function adjustAccountBalance(accountId, delta) {
+      const acc = accounts.find(a => a.id === accountId);
+      if (!acc) return;
+      const newBal = Number(acc.balance) + delta;
+      await sb.from('accounts').update({ balance: newBal }).eq('id', accountId);
+      acc.balance = newBal;
+    }
+
+    document.getElementById('tx-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const type = document.getElementById('tx-type').value;
+      const amount = Math.abs(parseFloat(document.getElementById('tx-amount').value));
+      const account_id = document.getElementById('tx-account').value;
+      const target_account_id = type === 'transfer' ? document.getElementById('tx-target-account').value : null;
+
+      if (type === 'transfer' && account_id === target_account_id) {
+        return alert('Seleziona due conti diversi per il trasferimento.');
+      }
+
+      const { error } = await sb.from('transactions').insert({
+        account_id, target_account_id, type, amount,
+        description: document.getElementById('tx-desc').value.trim(),
+        category: document.getElementById('tx-category').value.trim() || 'Generale',
+        date: document.getElementById('tx-date').value,
+        source: 'manual'
+      });
+
+      if (!error) {
+        if (type === 'income') await adjustAccountBalance(account_id, amount);
+        else if (type === 'expense') await adjustAccountBalance(account_id, -amount);
+        else if (type === 'transfer') {
+          await adjustAccountBalance(account_id, -amount);
+          await adjustAccountBalance(target_account_id, amount);
+        }
+        e.target.reset();
+        document.getElementById('tx-date').valueAsDate = new Date();
+        closeModal('tx-modal');
+        await loadAllData();
+      } else alert(error.message);
+    });
+
+    function renderTransactions() {
+      const q = document.getElementById('filter-search').value.toLowerCase();
+      const fAcc = document.getElementById('filter-account').value;
+      const fType = document.getElementById('filter-type').value;
+
+      const list = transactions.filter(t => {
+        if (fAcc !== 'all' && t.account_id !== fAcc && t.target_account_id !== fAcc) return false;
+        if (fType !== 'all' && t.type !== fType) return false;
+        if (q && !(t.description || '').toLowerCase().includes(q) && !(t.category || '').toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      const accMap = Object.fromEntries(accounts.map(a => [a.id, a.name]));
+      const tbody = document.getElementById('tx-table-body');
+      tbody.innerHTML = list.length === 0
+        ? `<tr><td colspan="7" class="p-8 text-center text-xs text-gray-400">Nessuna transazione trovata.</td></tr>`
+        : list.map(t => {
+            const sign = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : '⇄ ';
+            const color = t.type === 'income' ? 'text-emerald-600' : t.type === 'expense' ? 'text-gray-900' : 'text-indigo-600';
+            const accLabel = t.type === 'transfer' ? `${accMap[t.account_id] || '?'} → ${accMap[t.target_account_id] || '?'}` : (accMap[t.account_id] || '?');
+            return `
+              <tr class="hover:bg-gray-50">
+                <td class="p-3"><input type="checkbox" class="tx-check" value="${t.id}" onchange="updateBulkBtn()" /></td>
+                <td class="p-3 text-xs text-gray-500 whitespace-nowrap">${t.date}</td>
+                <td class="p-3 text-xs font-medium text-gray-900">${t.description || '-'}</td>
+                <td class="p-3 text-xs text-gray-600">${accLabel}</td>
+                <td class="p-3"><span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[11px]">${t.category}</span></td>
+                <td class="p-3 text-xs font-semibold text-right whitespace-nowrap ${color}">${sign}${fmtEur(t.amount)}</td>
+                <td class="p-3 text-right"><button onclick="deleteSingleTx('${t.id}')" class="text-gray-400 hover:text-red-600 text-xs">✕</button></td>
+              </tr>
+            `;
+          }).join('');
+      updateBulkBtn();
+    }
+
+    function toggleAllTx(master) {
+      document.querySelectorAll('.tx-check').forEach(c => c.checked = master.checked);
+      updateBulkBtn();
+    }
+
+    function updateBulkBtn() {
+      const count = document.querySelectorAll('.tx-check:checked').length;
+      const btn = document.getElementById('bulk-delete-btn');
+      btn.classList.toggle('hidden', count === 0);
+      btn.textContent = `Elimina selezionati (${count})`;
+    }
+
+    async function revertAndDeleteTx(txId) {
+      const t = transactions.find(x => x.id === txId);
+      if (!t) return;
+      const amt = Number(t.amount);
+      if (t.type === 'income') await adjustAccountBalance(t.account_id, -amt);
+      else if (t.type === 'expense') await adjustAccountBalance(t.account_id, amt);
+      else if (t.type === 'transfer') {
+        await adjustAccountBalance(t.account_id, amt);
+        await adjustAccountBalance(t.target_account_id, -amt);
+      }
+      await sb.from('transactions').delete().eq('id', txId);
+    }
+
+    async function deleteSingleTx(id) {
+      if (!confirm('Eliminare questa transazione e ripristinare il saldo?')) return;
+      await revertAndDeleteTx(id);
+      await loadAllData();
+    }
+
+    async function bulkDeleteTransactions() {
+      const ids = Array.from(document.querySelectorAll('.tx-check:checked')).map(c => c.value);
+      if (!confirm(`Eliminare ${ids.length} transazioni e aggiornare i saldi?`)) return;
+      for (const id of ids) await revertAndDeleteTx(id);
+      await loadAllData();
+    }
+
+    // ==================== RICORRENZE ====================
+    function toggleRecTarget() {
+      document.getElementById('rec-target').classList.toggle('hidden', document.getElementById('rec-type').value !== 'transfer');
+    }
+
+    document.getElementById('recurring-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const type = document.getElementById('rec-type').value;
+      const { error } = await sb.from('recurring_rules').insert({
+        description: document.getElementById('rec-desc').value.trim(),
+        type,
+        amount: parseFloat(document.getElementById('rec-amount').value),
+        account_id: document.getElementById('rec-account').value,
+        target_account_id: type === 'transfer' ? document.getElementById('rec-target').value : null,
+        category: document.getElementById('rec-cat').value.trim() || 'Ricorrente',
+        day_of_month: parseInt(document.getElementById('rec-day').value),
+        start_date: document.getElementById('rec-start').value,
+        end_date: document.getElementById('rec-end').value || null
+      });
+      if (!error) { e.target.reset(); await loadAllData(); }
+      else alert(error.message);
+    });
+
+    function renderRecurring() {
+      const accMap = Object.fromEntries(accounts.map(a => [a.id, a.name]));
+      const el = document.getElementById('recurring-list');
+      el.innerHTML = recurringRules.length === 0
+        ? `<p class="text-xs text-gray-400">Nessuna regola ricorrente configurata.</p>`
+        : recurringRules.map(r => `
+            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3">
+              <div>
+                <p class="text-sm font-medium text-gray-900">${r.description} <span class="text-xs font-normal text-gray-400">· Giorno ${r.day_of_month}</span></p>
+                <p class="text-xs text-gray-500">${accMap[r.account_id] || ''} ${r.target_account_id ? '→ ' + accMap[r.target_account_id] : ''} · Dal ${r.start_date} ${r.end_date ? 'al ' + r.end_date : '(senza scadenza)'}</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-sm font-semibold ${r.type === 'income' ? 'text-emerald-600' : 'text-gray-900'}">${fmtEur(r.amount)}</span>
+                <button onclick="deleteRecurring('${r.id}')" class="text-xs text-gray-400 hover:text-red-600">Elimina</button>
+              </div>
+            </div>
+          `).join('');
+    }
+
+    async function deleteRecurring(id) {
+      await sb.from('recurring_rules').delete().eq('id', id);
+      await loadAllData();
+    }
+
+    async function applyDueRecurring() {
+      const today = new Date().toISOString().slice(0, 10);
+      const currentYM = today.slice(0, 7);
+      let applied = 0;
+
+      for (const r of recurringRules) {
+        if (!r.active || r.last_applied_month === currentYM) continue;
+        if (r.start_date > today) continue;
+        if (r.end_date && r.end_date < today) continue;
+
+        const dayStr = String(Math.min(r.day_of_month, 28)).padStart(2, '0');
+        const txDate = `${currentYM}-${dayStr}`;
+
+        await sb.from('transactions').insert({
+          account_id: r.account_id,
+          target_account_id: r.target_account_id,
+          type: r.type,
+          amount: r.amount,
+          category: r.category,
+          description: r.description,
+          date: txDate,
+          source: 'recurring'
+        });
+
+        const amt = Number(r.amount);
+        if (r.type === 'income') await adjustAccountBalance(r.account_id, amt);
+        else if (r.type === 'expense') await adjustAccountBalance(r.account_id, -amt);
+        else if (r.type === 'transfer') {
+          await adjustAccountBalance(r.account_id, -amt);
+          await adjustAccountBalance(r.target_account_id, amt);
+        }
+
+        await sb.from('recurring_rules').update({ last_applied_month: currentYM }).eq('id', r.id);
+        applied++;
+      }
+      alert(applied > 0 ? `Applicate ${applied} ricorrenze per questo mese.` : 'Tutte le ricorrenze di questo mese risultano già applicate.');
+      await loadAllData();
+    }
+
+    // ==================== IMPORTAZIONE SMART CON GEMINI ====================
+    async function parseBankFileWithAI() {
+      const apiKey = localStorage.getItem('gemini_api_key');
+      if (!apiKey) return alert('Inserisci prima la tua Gemini API Key nella scheda Impostazioni.');
+      const file = document.getElementById('import-file').files[0];
+      if (!file) return alert('Seleziona un file PDF o CSV.');
+
+      const status = document.getElementById('import-status');
+      status.textContent = 'Analisi estratto conto con Gemini in corso...';
+      status.classList.remove('hidden');
+
+      try {
+        const parts = [{
+          text: `Sei un estrattore dati bancari per estratti conto italiani (UniCredit e Trade Republic).
+Estrai TUTTE le transazioni dal file fornito.
+Restituisci SOLO un array JSON valido (senza markdown, senza \`\`\`json) con questa struttura esatta per ogni elemento:
+{"date": "YYYY-MM-DD", "description": "descrizione breve pulita", "amount": 12.50, "type": "expense" oppure "income", "category": "una parola es. Spesa, Stipendio, Interessi, PAC, Trasporti, Svago, Abbonamenti"}
+Regole: "amount" deve essere sempre un numero positivo. Se è un addebito/pagamento usa "expense", se è un accredito/bonifico in entrata/interessi usa "income".`
+        }];
+
+        if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+          const base64 = await new Promise((res, rej) => {
+            const reader = new FileReader();
+            reader.onload = () => res(reader.result.split(',')[1]);
+            reader.onerror = rej;
+            reader.readAsDataURL(file);
+          });
+          parts.push({ inlineData: { mimeType: 'application/pdf', data: base64 } });
+        } else {
+          const text = await file.text();
+          parts.push({ text: `CONTENUTO CSV:\n${text.slice(0, 60000)}` });
+        }
+
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts }] })
+        });
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error.message);
+
+        let rawText = data.candidates[0].content.parts[0].text.trim();
+        rawText = rawText.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
+        parsedImportRows = JSON.parse(rawText);
+
+        const targetAcc = document.getElementById('import-account').value;
+        const tbody = document.getElementById('import-preview-body');
+        tbody.innerHTML = parsedImportRows.map((row, idx) => {
+          const isDup = transactions.some(t => t.account_id === targetAcc && t.date === row.date && Math.abs(Number(t.amount) - Number(row.amount)) < 0.01);
+          return `
+            <tr class="${isDup ? 'bg-amber-50' : ''}">
+              <td class="p-2"><input type="checkbox" class="imp-check" data-idx="${idx}" ${isDup ? '' : 'checked'} /></td>
+              <td class="p-2 whitespace-nowrap">${row.date}</td>
+              <td class="p-2">${row.description}</td>
+              <td class="p-2">${row.category}</td>
+              <td class="p-2 text-right font-medium ${row.type === 'income' ? 'text-emerald-600' : 'text-gray-900'}">${row.type === 'income' ? '+' : '-'}${fmtEur(row.amount)}</td>
+              <td class="p-2">${isDup ? '<span class="text-amber-700 font-medium">Possibile doppione</span>' : '<span class="text-emerald-600">Nuovo</span>'}</td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('import-preview-box').classList.remove('hidden');
+        status.textContent = `Trovati ${parsedImportRows.length} movimenti. Verifica e clicca Importa.`;
+      } catch (err) {
+        status.textContent = 'Errore analisi: ' + err.message;
+      }
+    }
+
+    async function confirmBankImport() {
+      const account_id = document.getElementById('import-account').value;
+      const checked = Array.from(document.querySelectorAll('.imp-check:checked')).map(c => parsedImportRows[Number(c.dataset.idx)]);
+      if (checked.length === 0) return alert('Nessun movimento selezionato.');
+
+      let netDelta = 0;
+      const toInsert = checked.map(r => {
+        const amt = Math.abs(Number(r.amount));
+        netDelta += (r.type === 'income' ? amt : -amt);
+        return {
+          account_id, type: r.type, amount: amt,
+          category: r.category || 'Importato',
+          description: r.description,
+          date: r.date,
+          source: 'bank_import'
+        };
+      });
+
+      const { error } = await sb.from('transactions').insert(toInsert);
+      if (!error) {
+        await adjustAccountBalance(account_id, netDelta);
+        document.getElementById('import-preview-box').classList.add('hidden');
+        alert(`Importati ${toInsert.length} movimenti con successo!`);
+        await loadAllData();
+      } else alert(error.message);
+    }
+
+    // ==================== SIMULATORE PAC ====================
+    function runSimulator() {
+      const initial = parseFloat(document.getElementById('sim-initial').value) || 0;
+      const monthly = parseFloat(document.getElementById('sim-monthly').value) || 0;
+      const annualRate = (parseFloat(document.getElementById('sim-rate').value) || 0) / 100;
+      const years = parseInt(document.getElementById('sim-years').value) || 1;
+
+      const labels = [], investedArr = [], totalArr = [];
+      let total = initial, invested = initial;
+      const r = annualRate / 12;
+
+      for (let y = 0; y <= years; y++) {
+        labels.push(`Anno ${y}`);
+        investedArr.push(Math.round(invested));
+        totalArr.push(Math.round(total));
+        for (let m = 0; m < 12; m++) {
+          total = (total + monthly) * (1 + r);
+          invested += monthly;
+        }
+      }
+
+      const finalInv = investedArr[years], finalTot = totalArr[years];
+      document.getElementById('sim-out-invested').textContent = fmtEur(finalInv);
+      document.getElementById('sim-out-gain').textContent = `+${fmtEur(finalTot - finalInv)}`;
+      document.getElementById('sim-out-total').textContent = fmtEur(finalTot);
+
+      const ctx = document.getElementById('sim-chart').getContext('2d');
+      if (simChart) simChart.destroy();
+      simChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Valore Totale', data: totalArr, borderColor: '#4F46E5', backgroundColor: 'rgba(79,70,229,0.08)', fill: true, tension: 0.3 },
+            { label: 'Capitale Versato', data: investedArr, borderColor: '#9CA3AF', borderDash: [5, 5], fill: false, tension: 0.3 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // ==================== CHAT ASSISTENTE IA ====================
+    document.getElementById('ai-chat-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const apiKey = localStorage.getItem('gemini_api_key');
+      if (!apiKey) return alert('Inserisci prima la tua Gemini API Key nella scheda Impostazioni.');
+
+      const input = document.getElementById('ai-input');
+      const question = input.value.trim();
+      if (!question) return;
+      input.value = '';
+
+      const box = document.getElementById('ai-chat-box');
+      box.innerHTML += `<div class="ml-auto bg-gray-900 text-white rounded-xl p-3 text-xs max-w-md">${question}</div>`;
+      const loadingId = 'ai-load-' + Date.now();
+      box.innerHTML += `<div id="${loadingId}" class="bg-gray-50 border border-gray-100 rounded-xl p-3 text-xs text-gray-500 max-w-xl">Sto analizzando i tuoi dati...</div>`;
+      box.scrollTop = box.scrollHeight;
+
+      const contextData = {
+        oggi: new Date().toISOString().slice(0, 10),
+        conti: accounts.map(a => ({ nome: a.name, categoria: a.category, saldo: a.balance, tasso: a.interest_rate })),
+        ricorrenze: recurringRules.map(r => ({ desc: r.description, tipo: r.type, importo: r.amount, giorno: r.day_of_month })),
+        ultime_50_transazioni: transactions.slice(0, 50).map(t => ({ data: t.date, tipo: t.type, importo: t.amount, cat: t.category, desc: t.description }))
+      };
+
+      try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `Sei il CFO personale dell'utente. Rispondi in italiano in modo chiaro, concreto e basato SOLO sui numeri reali nel JSON seguente.\n\nDATI FINANZIARI:\n${JSON.stringify(contextData)}\n\nDOMANDA UTENTE:\n${question}`
+              }]
+            }]
+          })
+        });
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error.message);
+        const answer = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        document.getElementById(loadingId).innerHTML = answer;
+      } catch (err) {
+        document.getElementById(loadingId).textContent = 'Errore Gemini: ' + err.message;
+      }
+      box.scrollTop = box.scrollHeight;
+    });
+
+    // ==================== IMPOSTAZIONI ====================
+    function saveSettings() {
+      localStorage.setItem('gemini_api_key', document.getElementById('setting-gemini-key').value.trim());
+      const msg = document.getElementById('settings-saved-msg');
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 2000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
