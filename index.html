@@ -607,21 +607,23 @@
     }
 
     // ==================== NAVIGAZIONE ====================
-  function toggleMobileMenu(forceClose = false) {
-      const menu = document.getElementById('mobile-menu');
-      const overlay = document.getElementById('mobile-menu-overlay');
+ function toggleMobileMenu(forceState) {
+      const menu = document.getElementById('mobile-drawer');
+      const overlay = document.getElementById('mobile-drawer-backdrop');
       const isClosed = menu.classList.contains('-translate-x-full');
-      if (forceClose || !isClosed) {
-        menu.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
-      } else {
+      const shouldOpen = forceState !== undefined ? forceState : isClosed;
+
+      if (shouldOpen) {
         menu.classList.remove('-translate-x-full');
         overlay.classList.remove('hidden');
+      } else {
+        menu.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
       }
     }
 
     function switchTab(tab) {
-      toggleMobileMenu(true);
+      toggleMobileMenu(false);
       document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
       document.getElementById(`tab-${tab}`).classList.remove('hidden');
       const titles = {
