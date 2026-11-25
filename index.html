@@ -132,7 +132,7 @@
               </div>
             </div>
 
-            <!-- Card Capitale Attuale + Grafico -->
+            <!-- Card Capitale Attuale + Grafico stile Trade Republic -->
             <div class="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 shadow-xs">
               <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
                 <div>
@@ -156,6 +156,12 @@
               </div>
               <div class="h-56 w-full">
                 <canvas id="networth-chart"></canvas>
+              </div>
+              <div class="flex items-center gap-1.5 mt-4 pt-3 border-t border-gray-100">
+                <button onclick="setChartRange(7)" data-range="7" class="range-btn px-2.5 py-1 text-xs font-medium rounded-md text-gray-500 hover:bg-gray-100">1S</button>
+                <button onclick="setChartRange(30)" data-range="30" class="range-btn px-2.5 py-1 text-xs font-medium rounded-md bg-gray-900 text-white">1M</button>
+                <button onclick="setChartRange(90)" data-range="90" class="range-btn px-2.5 py-1 text-xs font-medium rounded-md text-gray-500 hover:bg-gray-100">3M</button>
+                <button onclick="setChartRange(365)" data-range="365" class="range-btn px-2.5 py-1 text-xs font-medium rounded-md text-gray-500 hover:bg-gray-100">1A</button>
               </div>
             </div>
 
@@ -195,7 +201,7 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 class="text-xl font-semibold text-gray-900">Transazioni</h2>
-                <p class="text-xs text-gray-500">Storico completo entrate, uscite e trasferimenti</p>
+                <p class="text-xs text-gray-500">Storico completo entrate, uscite e giroconti</p>
               </div>
               <div class="flex items-center gap-2">
                 <button id="bulk-delete-btn" onclick="bulkDeleteTransactions()" class="hidden text-xs font-medium px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition">Elimina selezionati</button>
@@ -212,7 +218,7 @@
                 <option value="all">Tutti i tipi</option>
                 <option value="income">Entrate</option>
                 <option value="expense">Uscite</option>
-                <option value="transfer">Trasferimenti / Rate</option>
+                <option value="transfer">Giroconti / Rate</option>
               </select>
             </div>
 
@@ -253,7 +259,7 @@
               <select id="rec-type" onchange="toggleRecTarget()" class="text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white">
                 <option value="expense">Uscita</option>
                 <option value="income">Entrata</option>
-                <option value="transfer">Trasferimento / Rata Debito</option>
+                <option value="transfer">Giroconto / Rata Debito</option>
               </select>
               <input type="number" step="0.01" id="rec-amount" required placeholder="Importo (€)" class="text-xs px-3 py-2 border border-gray-200 rounded-lg" />
 
@@ -509,7 +515,7 @@
     </div>
   </div>
 
-  <!-- ==================== MODALE NUOVA TRANSAZIONE ==================== -->
+  <!-- ==================== MODALE NUOVA TRANSAZIONE / GIROCONTO ==================== -->
   <div id="tx-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center">
@@ -520,7 +526,7 @@
         <div class="grid grid-cols-3 gap-2">
           <button type="button" onclick="setTxType('expense')" id="tx-btn-expense" class="py-2 text-xs font-medium rounded-lg border bg-gray-900 text-white">Uscita</button>
           <button type="button" onclick="setTxType('income')" id="tx-btn-income" class="py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-600">Entrata</button>
-          <button type="button" onclick="setTxType('transfer')" id="tx-btn-transfer" class="py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-600">Trasf. / Rata</button>
+          <button type="button" onclick="setTxType('transfer')" id="tx-btn-transfer" class="py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-600">Giroconto</button>
         </div>
         <input type="hidden" id="tx-type" value="expense" />
         <input type="number" step="0.01" id="tx-amount" required placeholder="Importo (€)" class="w-full text-lg font-semibold px-3 py-2 border border-gray-300 rounded-lg" />
@@ -529,10 +535,10 @@
           <select id="tx-account" required class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg bg-white"></select>
         </div>
         <div id="tx-target-wrap" class="hidden">
-          <label class="block text-[11px] text-gray-500 mb-1">Verso conto (se scegli un Debito, lo riduce in automatico)</label>
+          <label class="block text-[11px] text-gray-500 mb-1">Versa su conto (Investimenti, Remunerato o Debito da ridurre)</label>
           <select id="tx-target-account" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg bg-white"></select>
         </div>
-        <input type="text" id="tx-desc" required placeholder="Descrizione (es. Benzina, Stipendio, Rata)" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
+        <input type="text" id="tx-desc" required placeholder="Descrizione (es. Versamento PAC, Giroconto, Spesa)" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
         <div class="grid grid-cols-2 gap-3">
           <input type="text" id="tx-category" placeholder="Categoria" value="Generale" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
           <input type="date" id="tx-date" required class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
@@ -556,6 +562,7 @@
     let parsedImportRows = [];
     let networthChart = null;
     let simChart = null;
+    window.chartRangeDays = 30;
 
     const CAT_META = {
       cash:        { label: 'Liquidità',    color: '#3B82F6' },
@@ -566,6 +573,11 @@
     };
 
     const fmtEur = (n) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(n) || 0);
+    const fmtDateIT = (iso) => {
+      if (!iso || !iso.includes('-')) return iso || '-';
+      const [y, m, d] = iso.split('-');
+      return `${d}/${m}/${y}`;
+    };
     const getTodayISO = () => {
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -629,7 +641,7 @@
       document.getElementById('settings-user-email').textContent = user.email;
       refreshTodayDates();
       await loadAllData();
-      await applyDueRecurring(true); // Applica in automatico le ricorrenze scadute ad oggi
+      await applyDueRecurring(true);
       switchTab('dashboard');
     }
 
@@ -745,12 +757,11 @@
           `).join('');
     }
 
-    // ==================== DASHBOARD (SOLO CAPITALE ATTUALE) ====================
+    // ==================== DASHBOARD (STILE TRADE REPUBLIC) ====================
     function renderDashboard() {
       const assetsSum = accounts.filter(a => a.category !== 'debt').reduce((s, a) => s + Number(a.balance), 0);
       const debtsSum = accounts.filter(a => a.category === 'debt').reduce((s, a) => s + Number(a.balance), 0);
 
-      // Mostra SOLO il capitale attuale (non sottrae i debiti)
       document.getElementById('dash-networth').textContent = fmtEur(assetsSum);
       document.getElementById('dash-total-assets').textContent = `· ${fmtEur(assetsSum)}`;
 
@@ -806,9 +817,11 @@
         `;
       }).join('');
 
-      // Grafico ultimi 30 giorni del Capitale Attuale
+      // Grafico stile Trade Republic (storico fino a Oggi, colore dinamico verde/rosso)
+      const todayISO = getTodayISO();
       let runningCap = assetsSum;
       const txByDate = {};
+
       transactions.forEach(t => {
         const acc = accounts.find(a => a.id === t.account_id);
         const target = accounts.find(a => a.id === t.target_account_id);
@@ -816,17 +829,32 @@
         if (t.type === 'income' && acc?.category !== 'debt') deltaDay = Number(t.amount);
         else if (t.type === 'expense' && acc?.category !== 'debt') deltaDay = -Number(t.amount);
         else if (t.type === 'transfer' && acc?.category !== 'debt' && target?.category === 'debt') deltaDay = -Number(t.amount);
-        txByDate[t.date] = (txByDate[t.date] || 0) + deltaDay;
+
+        if (t.date > todayISO) {
+          runningCap -= deltaDay;
+        } else {
+          txByDate[t.date] = (txByDate[t.date] || 0) + deltaDay;
+        }
       });
 
+      const days = window.chartRangeDays || 30;
       const tempPoints = [];
-      for (let i = 0; i < 30; i++) {
+      const fmtDay = new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: 'short' });
+
+      for (let i = 0; i < days; i++) {
         const d = new Date();
         d.setDate(d.getDate() - i);
         const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        tempPoints.unshift({ label: iso.slice(5), val: runningCap });
+        const label = i === 0 ? 'Oggi' : fmtDay.format(d);
+        tempPoints.unshift({ label, val: runningCap });
         runningCap -= (txByDate[iso] || 0);
       }
+
+      const startVal = tempPoints[0]?.val || 0;
+      const endVal = tempPoints[tempPoints.length - 1]?.val || 0;
+      const isUp = endVal >= startVal;
+      const lineColor = isUp ? '#10B981' : '#EF4444';
+      const fillColor = isUp ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
 
       const ctx = document.getElementById('networth-chart').getContext('2d');
       if (networthChart) networthChart.destroy();
@@ -834,22 +862,64 @@
         type: 'line',
         data: {
           labels: tempPoints.map(p => p.label),
-          datasets: [{
-            data: tempPoints.map(p => p.val),
-            borderColor: '#10B981',
-            backgroundColor: 'rgba(16, 185, 129, 0.06)',
-            borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 4
-          }]
+          datasets: [
+            {
+              label: 'Capitale',
+              data: tempPoints.map(p => p.val),
+              borderColor: lineColor,
+              backgroundColor: fillColor,
+              borderWidth: 2,
+              fill: true,
+              tension: 0.15,
+              pointRadius: 0,
+              pointHoverRadius: 5,
+              pointHoverBackgroundColor: lineColor
+            },
+            {
+              label: 'Inizio periodo',
+              data: tempPoints.map(() => startVal),
+              borderColor: '#D1D5DB',
+              borderDash: [4, 4],
+              borderWidth: 1,
+              pointRadius: 0,
+              fill: false
+            }
+          ]
         },
         options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtEur(c.raw) } } },
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              filter: item => item.datasetIndex === 0,
+              callbacks: {
+                label: c => {
+                  const diff = c.raw - startVal;
+                  const sign = diff >= 0 ? '+' : '';
+                  return `${fmtEur(c.raw)} (${sign}${fmtEur(diff)})`;
+                }
+              }
+            }
+          },
           scales: {
-            x: { grid: { display: false }, ticks: { maxTicksLimit: 6, font: { size: 10 } } },
-            y: { grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 }, callback: v => '€' + v } }
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 6, font: { size: 10 }, color: '#9CA3AF' } },
+            y: { display: false }
           }
         }
       });
+    }
+
+    function setChartRange(days) {
+      window.chartRangeDays = days;
+      document.querySelectorAll('.range-btn').forEach(b => {
+        const active = Number(b.dataset.range) === days;
+        b.className = active
+          ? 'range-btn px-2.5 py-1 text-xs font-medium rounded-md bg-gray-900 text-white'
+          : 'range-btn px-2.5 py-1 text-xs font-medium rounded-md text-gray-500 hover:bg-gray-100';
+      });
+      renderDashboard();
     }
 
     // ==================== GESTIONE CONTI ====================
@@ -883,9 +953,11 @@
       document.getElementById('filter-account').innerHTML = '<option value="all">Tutti i conti</option>' + opts;
     }
 
-    // ==================== TRANSAZIONI & LOGICA DEBITO SEMPLIFICATA ====================
+    // ==================== TRANSAZIONI & GIROCONTI ====================
     function openTxModal() {
       if (accounts.length === 0) { alert('Crea prima almeno un conto.'); return openAccountModal(); }
+      document.getElementById('tx-form').reset();
+      setTxType('expense');
       document.getElementById('tx-date').value = getTodayISO();
       document.getElementById('tx-modal').classList.remove('hidden');
     }
@@ -898,7 +970,7 @@
           : 'py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-600';
       });
       document.getElementById('tx-target-wrap').classList.toggle('hidden', type !== 'transfer');
-      document.getElementById('tx-acc-label').textContent = type === 'transfer' ? 'Da conto (es. UniCredit)' : 'Conto';
+      document.getElementById('tx-acc-label').textContent = type === 'transfer' ? 'Preleva da conto (es. UniCredit o Remunerato)' : 'Conto';
     }
 
     async function adjustAccountBalance(accountId, delta) {
@@ -918,7 +990,6 @@
         await adjustAccountBalance(account_id, sign * -amount);
       } else if (type === 'transfer') {
         await adjustAccountBalance(account_id, sign * -amount);
-        // Se il conto di destinazione è un DEBITO, il trasferimento RIDUCE il debito!
         const targetDelta = (targetAcc && targetAcc.category === 'debt') ? (-amount) : amount;
         await adjustAccountBalance(target_account_id, sign * targetDelta);
       }
@@ -932,7 +1003,7 @@
       const target_account_id = type === 'transfer' ? document.getElementById('tx-target-account').value : null;
 
       if (type === 'transfer' && account_id === target_account_id) {
-        return alert('Seleziona due conti diversi.');
+        return alert('Seleziona due conti diversi per il giroconto.');
       }
 
       const { error } = await sb.from('transactions').insert({
@@ -974,7 +1045,7 @@
             return `
               <tr class="hover:bg-gray-50">
                 <td class="p-3"><input type="checkbox" class="tx-check" value="${t.id}" onchange="updateBulkBtn()" /></td>
-                <td class="p-3 text-xs text-gray-500 whitespace-nowrap">${t.date}</td>
+                <td class="p-3 text-xs text-gray-500 whitespace-nowrap">${fmtDateIT(t.date)}</td>
                 <td class="p-3 text-xs font-medium text-gray-900">${t.description || '-'}</td>
                 <td class="p-3 text-xs text-gray-600">${accLabel}</td>
                 <td class="p-3"><span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[11px]">${t.category}</span></td>
@@ -1049,7 +1120,7 @@
             <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3">
               <div>
                 <p class="text-sm font-medium text-gray-900">${r.description} <span class="text-xs font-normal text-gray-400">· Giorno ${r.day_of_month}</span></p>
-                <p class="text-xs text-gray-500">${accMap[r.account_id] || ''} ${r.target_account_id ? '→ ' + accMap[r.target_account_id] : ''} · Dal ${r.start_date} ${r.end_date ? 'al ' + r.end_date : '(senza scadenza)'}</p>
+                <p class="text-xs text-gray-500">${accMap[r.account_id] || ''} ${r.target_account_id ? '→ ' + accMap[r.target_account_id] : ''} · Dal ${fmtDateIT(r.start_date)} ${r.end_date ? 'al ' + fmtDateIT(r.end_date) : '(senza scadenza)'}</p>
               </div>
               <div class="flex items-center gap-3">
                 <span class="text-sm font-semibold ${r.type === 'income' ? 'text-emerald-600' : 'text-gray-900'}">${fmtEur(r.amount)}</span>
@@ -1074,7 +1145,7 @@
         if (!r.active || r.last_applied_month === currentYM) continue;
         if (r.start_date > today) continue;
         if (r.end_date && r.end_date < today) continue;
-        if (todayDay < r.day_of_month) continue; // Applica solo se il giorno del mese è già arrivato
+        if (todayDay < r.day_of_month) continue;
 
         const dayStr = String(Math.min(r.day_of_month, 28)).padStart(2, '0');
         const txDate = `${currentYM}-${dayStr}`;
@@ -1108,7 +1179,6 @@
       const invRateMonthly = ((parseFloat(document.getElementById('proj-inv-rate').value) || 0) / 100) / 12;
       const remRateMonthly = ((parseFloat(document.getElementById('proj-rem-rate').value) || 0) / 100) / 12;
 
-      // Clona i saldi reali attuali per conto
       const simBalances = {};
       accounts.forEach(a => simBalances[a.id] = Number(a.balance) || 0);
 
@@ -1140,7 +1210,6 @@
         const curISO = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-15`;
         const lbl = `${String(cur.getMonth() + 1).padStart(2, '0')}/${String(cur.getFullYear()).slice(2)}`;
 
-        // 1. Applica tutte le ricorrenze attive in quel mese
         recurringRules.forEach(r => {
           if (!r.active) return;
           if (r.start_date && r.start_date > curISO) return;
@@ -1154,7 +1223,6 @@
           } else if (r.type === 'transfer') {
             const targetAcc = accounts.find(a => a.id === r.target_account_id);
             if (targetAcc && targetAcc.category === 'debt') {
-              // Paga la rata solo se c'è ancora debito residuo
               const pay = Math.min(amt, Math.max(0, simBalances[r.target_account_id] || 0));
               if (simBalances[r.account_id] !== undefined) simBalances[r.account_id] -= pay;
               simBalances[r.target_account_id] = Math.max(0, (simBalances[r.target_account_id] || 0) - pay);
@@ -1165,7 +1233,6 @@
           }
         });
 
-        // 2. Applica interessi mensili su investimenti e conti remunerati
         accounts.forEach(a => {
           if (a.category === 'investments' && simBalances[a.id] > 0) {
             simBalances[a.id] *= (1 + invRateMonthly);
@@ -1254,7 +1321,7 @@ Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON val
           return `
             <tr class="${isDup ? 'bg-amber-50' : ''}">
               <td class="p-2"><input type="checkbox" class="imp-check" data-idx="${idx}" ${isDup ? '' : 'checked'} /></td>
-              <td class="p-2 whitespace-nowrap">${row.date}</td>
+              <td class="p-2 whitespace-nowrap">${fmtDateIT(row.date)}</td>
               <td class="p-2">${row.description}</td>
               <td class="p-2">${row.category}</td>
               <td class="p-2 text-right font-medium ${row.type === 'income' ? 'text-emerald-600' : 'text-gray-900'}">${row.type === 'income' ? '+' : '-'}${fmtEur(row.amount)}</td>
@@ -1348,7 +1415,7 @@ Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON val
       const toDelete = transactions.filter(t => t.date >= from && t.date <= to);
       if (toDelete.length === 0) return alert('Nessuna transazione trovata in questo intervallo.');
 
-      if (!confirm(`Vuoi eliminare ${toDelete.length} transazioni dal ${from} al ${to} e ripristinare automaticamente i saldi?`)) return;
+      if (!confirm(`Vuoi eliminare ${toDelete.length} transazioni dal ${fmtDateIT(from)} al ${fmtDateIT(to)} e ripristinare automaticamente i saldi?`)) return;
 
       for (const t of toDelete) {
         await revertAndDeleteTx(t.id);
