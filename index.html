@@ -125,11 +125,9 @@
 
           <!-- ========== TAB 1: DASHBOARD ========== -->
           <section id="tab-dashboard" class="space-y-6">
-            <div class="flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">Bentornato</h2>
-                <p id="dash-today-date" class="text-sm text-gray-500 capitalize"></p>
-              </div>
+            <div>
+              <h2 class="text-2xl font-semibold text-gray-900 tracking-tight">Bentornato</h2>
+              <p id="dash-today-date" class="text-sm text-gray-500 capitalize"></p>
             </div>
 
             <!-- Card Capitale Attuale + Grafico stile Trade Republic -->
@@ -233,7 +231,7 @@
                       <th class="p-3">Conto</th>
                       <th class="p-3">Categoria</th>
                       <th class="p-3 text-right">Importo</th>
-                      <th class="p-3 w-10"></th>
+                      <th class="p-3 w-16 text-right">Azioni</th>
                     </tr>
                   </thead>
                   <tbody id="tx-table-body" class="divide-y divide-gray-100 text-sm"></tbody>
@@ -244,18 +242,13 @@
 
           <!-- ========== TAB 3: RICORRENZE ========== -->
           <section id="tab-recurring" class="hidden space-y-5">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 class="text-xl font-semibold text-gray-900">Spese, Entrate & Rate Ricorrenti</h2>
-                <p class="text-xs text-gray-500">Si applicano automaticamente alla data corrente e alimentano la Proiezione.</p>
-              </div>
-              <button onclick="applyDueRecurring(false)" class="text-xs font-medium px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-1.5">
-                <i data-lucide="play" class="w-3.5 h-3.5"></i> Forza controllo ora
-              </button>
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900">Ricorrenze & Stime Mensili</h2>
+              <p class="text-xs text-gray-500">Le ricorrenze fisse si applicano in automatico; usa "Solo per Proiezione" per stime variabili come la benzina.</p>
             </div>
 
             <form id="recurring-form" class="bg-white border border-gray-200 rounded-2xl p-5 grid grid-cols-1 md:grid-cols-4 gap-3">
-              <input type="text" id="rec-desc" required placeholder="Descrizione (es. Stipendio, PAC, Rata Auto)" class="md:col-span-2 text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              <input type="text" id="rec-desc" required placeholder="Descrizione (es. Stipendio, PAC, Benzina)" class="md:col-span-2 text-xs px-3 py-2 border border-gray-200 rounded-lg" />
               <select id="rec-type" onchange="toggleRecTarget()" class="text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white">
                 <option value="expense">Uscita</option>
                 <option value="income">Entrata</option>
@@ -265,7 +258,7 @@
 
               <select id="rec-account" required class="text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white"></select>
               <select id="rec-target" class="hidden text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white"></select>
-              <input type="text" id="rec-cat" placeholder="Categoria (es. PAC, Rata)" class="text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              <input type="text" id="rec-cat" placeholder="Categoria (es. PAC, Benzina)" class="text-xs px-3 py-2 border border-gray-200 rounded-lg" />
               <input type="number" min="1" max="31" id="rec-day" required placeholder="Giorno del mese (1-31)" class="text-xs px-3 py-2 border border-gray-200 rounded-lg" />
 
               <div>
@@ -276,7 +269,11 @@
                 <label class="block text-[10px] text-gray-400 mb-0.5">Data Fine (opzionale)</label>
                 <input type="date" id="rec-end" class="w-full text-xs px-3 py-2 border border-gray-200 rounded-lg" />
               </div>
-              <div class="md:col-span-2 flex items-end">
+              <div class="md:col-span-2 flex items-center gap-2 pt-2">
+                <input type="checkbox" id="rec-proj-only" class="rounded border-gray-300" />
+                <label for="rec-proj-only" class="text-xs text-gray-600 cursor-pointer">Solo per Proiezione (non addebitare in automatico)</label>
+              </div>
+              <div class="md:col-span-4">
                 <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium py-2.5 rounded-lg">Salva Regola Ricorrente</button>
               </div>
             </form>
@@ -288,21 +285,17 @@
           <section id="tab-simulator" class="hidden space-y-5">
             <div>
               <h2 class="text-xl font-semibold text-gray-900">Proiezione Patrimonio & Debiti</h2>
-              <p class="text-xs text-gray-500">Simula l'andamento reale dei tuoi conti e delle rate ricorrenti fino alla data che scegli.</p>
+              <p class="text-xs text-gray-500">Simula l'andamento reale dei tuoi conti e delle ricorrenze fino alla data che scegli.</p>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded-2xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">Proietta fino alla data</label>
                 <input type="date" id="proj-end-date" onchange="runProjection()" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Rendimento Annuo Investimenti (%)</label>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Rendimento Annuo Stimato Investimenti (%)</label>
                 <input type="number" step="0.5" id="proj-inv-rate" value="7" oninput="runProjection()" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">Tasso Conto Remunerato (%)</label>
-                <input type="number" step="0.1" id="proj-rem-rate" value="2.5" oninput="runProjection()" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
               </div>
             </div>
 
@@ -328,14 +321,14 @@
             <div class="bg-white border border-gray-200 rounded-2xl p-5 h-80">
               <canvas id="sim-chart"></canvas>
             </div>
-            <p class="text-[11px] text-gray-400">* La proiezione parte dai saldi attuali, applica tutte le regole ricorrenti attive (rispettando inizio e fine) e calcola gli interessi composti mensili sui conti remunerati (liquidità con tasso &gt; 0) e sui conti investimenti.</p>
+            <p class="text-[11px] text-gray-400">* Gli interessi sui conti remunerati vengono calcolati usando il tasso salvato su ogni singolo conto, già al netto della ritenuta fiscale italiana del 26%.</p>
           </section>
 
           <!-- ========== TAB 5: IMPORTA BANCA CON IA ========== -->
           <section id="tab-import" class="hidden space-y-5">
             <div>
               <h2 class="text-xl font-semibold text-gray-900">Importazione Smart (UniCredit & Trade Republic)</h2>
-              <p class="text-xs text-gray-500">Carica l'estratto conto PDF di Trade Republic o il file CSV/PDF di UniCredit: Gemini estrae e deduplica i movimenti.</p>
+              <p class="text-xs text-gray-500">Carica l'estratto conto PDF di Trade Republic o il file CSV/PDF di UniCredit: Gemini estrae e deduplica i movimenti (±3 giorni).</p>
             </div>
 
             <div class="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
@@ -402,7 +395,6 @@
               <p class="text-xs text-gray-500">Configurazione IA, sessione e gestione reset dei dati</p>
             </div>
 
-            <!-- Chiave Gemini -->
             <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
               <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">Google Gemini API Key</label>
@@ -413,11 +405,10 @@
               <span id="settings-saved-msg" class="text-xs text-emerald-600 ml-2 hidden">Salvato!</span>
             </div>
 
-            <!-- Reset per intervallo di date -->
             <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
               <div>
                 <h3 class="text-sm font-semibold text-gray-900">Reset Movimenti per Intervallo di Date</h3>
-                <p class="text-xs text-gray-500">Elimina tutte le transazioni comprese tra le due date e ripristina automaticamente i saldi dei conti.</p>
+                <p class="text-xs text-gray-500">Elimina tutte le transazioni comprese tra le due date e ripristina automaticamente i saldi.</p>
               </div>
               <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -432,7 +423,6 @@
               <button onclick="resetByDateRange()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium px-4 py-2.5 rounded-lg">Elimina movimenti nel periodo</button>
             </div>
 
-            <!-- Reset Generale -->
             <div class="bg-white border border-red-200 rounded-2xl p-5 space-y-3">
               <div>
                 <h3 class="text-sm font-semibold text-red-700">Reset Generale</h3>
@@ -441,7 +431,6 @@
               <button onclick="resetAllData()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-4 py-2.5 rounded-lg">Reset Generale (Cancella Tutto)</button>
             </div>
 
-            <!-- Sessione -->
             <div class="bg-white border border-gray-200 rounded-2xl p-5 flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-gray-900">Sessione attiva</p>
@@ -484,14 +473,15 @@
     </main>
   </div>
 
-  <!-- ==================== MODALE NUOVO CONTO ==================== -->
+  <!-- ==================== MODALE CONTO (NUOVO / MODIFICA) ==================== -->
   <div id="account-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center">
-        <h3 class="text-base font-semibold">Nuovo Conto / Asset</h3>
+        <h3 id="account-modal-title" class="text-base font-semibold">Nuovo Conto / Asset</h3>
         <button onclick="closeModal('account-modal')" class="text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <form id="account-form" class="space-y-3">
+        <input type="hidden" id="acc-edit-id" value="" />
         <input type="text" id="acc-name" required placeholder="Nome (es. UniCredit, Trade Republic Cash, PAC)" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
         <select id="acc-category" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg bg-white">
           <option value="cash">Liquidità / Conto Remunerato</option>
@@ -506,7 +496,7 @@
             <input type="number" step="0.01" id="acc-balance" required value="0" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Tasso annuo % (es. 2.5)</label>
+            <label class="block text-xs text-gray-500 mb-1">Tasso lordo % (es. 2.5)</label>
             <input type="number" step="0.01" id="acc-rate" value="0" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
           </div>
         </div>
@@ -515,14 +505,15 @@
     </div>
   </div>
 
-  <!-- ==================== MODALE NUOVA TRANSAZIONE / GIROCONTO ==================== -->
+  <!-- ==================== MODALE TRANSAZIONE (NUOVA / MODIFICA) ==================== -->
   <div id="tx-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center">
-        <h3 class="text-base font-semibold">Nuova Operazione</h3>
+        <h3 id="tx-modal-title" class="text-base font-semibold">Nuova Operazione</h3>
         <button onclick="closeModal('tx-modal')" class="text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
       <form id="tx-form" class="space-y-3">
+        <input type="hidden" id="tx-edit-id" value="" />
         <div class="grid grid-cols-3 gap-2">
           <button type="button" onclick="setTxType('expense')" id="tx-btn-expense" class="py-2 text-xs font-medium rounded-lg border bg-gray-900 text-white">Uscita</button>
           <button type="button" onclick="setTxType('income')" id="tx-btn-income" class="py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-600">Entrata</button>
@@ -641,7 +632,7 @@
       document.getElementById('settings-user-email').textContent = user.email;
       refreshTodayDates();
       await loadAllData();
-      await applyDueRecurring(true);
+      await applyDueRecurring();
       switchTab('dashboard');
     }
 
@@ -735,9 +726,10 @@
                 <div class="mt-1 space-y-0.5">
                   ${list.map(acc => `
                     <div class="group flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-gray-50 text-xs">
-                      <span class="text-gray-700 truncate">${acc.name}</span>
+                      <span class="text-gray-700 truncate">${acc.name}${Number(acc.interest_rate) > 0 ? ` <span class="text-[10px] text-blue-500">${acc.interest_rate}%</span>` : ''}</span>
                       <div class="flex items-center gap-1.5">
                         <span class="font-medium ${acc.category === 'debt' ? 'text-red-600' : 'text-gray-900'}">${fmtEur(acc.balance)}</span>
+                        <button onclick="openEditAccountModal('${acc.id}')" title="Modifica" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-800">✎</button>
                         <button onclick="deleteAccount('${acc.id}')" title="Elimina" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500">×</button>
                       </div>
                     </div>
@@ -750,9 +742,12 @@
       mobContainer.innerHTML = accounts.length === 0
         ? `<p class="text-xs text-gray-400">Nessun conto aggiunto.</p>`
         : accounts.map(acc => `
-            <div class="flex items-center justify-between py-1.5 border-b border-gray-50 text-xs">
+            <div class="flex items-center justify-between py-2 border-b border-gray-50 text-xs">
               <span class="font-medium text-gray-800">${acc.name} <span class="text-[10px] text-gray-400">(${CAT_META[acc.category]?.label || acc.category})</span></span>
-              <span class="font-semibold ${acc.category === 'debt' ? 'text-red-600' : 'text-gray-900'}">${fmtEur(acc.balance)}</span>
+              <div class="flex items-center gap-2.5">
+                <span class="font-semibold ${acc.category === 'debt' ? 'text-red-600' : 'text-gray-900'}">${fmtEur(acc.balance)}</span>
+                <button onclick="openEditAccountModal('${acc.id}')" class="text-gray-400 hover:text-gray-800">✎</button>
+              </div>
             </div>
           `).join('');
     }
@@ -817,7 +812,7 @@
         `;
       }).join('');
 
-      // Grafico stile Trade Republic (storico fino a Oggi, colore dinamico verde/rosso)
+      // Grafico stile Trade Republic
       const todayISO = getTodayISO();
       let runningCap = assetsSum;
       const txByDate = {};
@@ -830,11 +825,8 @@
         else if (t.type === 'expense' && acc?.category !== 'debt') deltaDay = -Number(t.amount);
         else if (t.type === 'transfer' && acc?.category !== 'debt' && target?.category === 'debt') deltaDay = -Number(t.amount);
 
-        if (t.date > todayISO) {
-          runningCap -= deltaDay;
-        } else {
-          txByDate[t.date] = (txByDate[t.date] || 0) + deltaDay;
-        }
+        if (t.date > todayISO) runningCap -= deltaDay;
+        else txByDate[t.date] = (txByDate[t.date] || 0) + deltaDay;
       });
 
       const days = window.chartRangeDays || 30;
@@ -864,31 +856,19 @@
           labels: tempPoints.map(p => p.label),
           datasets: [
             {
-              label: 'Capitale',
-              data: tempPoints.map(p => p.val),
-              borderColor: lineColor,
-              backgroundColor: fillColor,
-              borderWidth: 2,
-              fill: true,
-              tension: 0.15,
-              pointRadius: 0,
-              pointHoverRadius: 5,
-              pointHoverBackgroundColor: lineColor
+              label: 'Capitale', data: tempPoints.map(p => p.val),
+              borderColor: lineColor, backgroundColor: fillColor,
+              borderWidth: 2, fill: true, tension: 0.15,
+              pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: lineColor
             },
             {
-              label: 'Inizio periodo',
-              data: tempPoints.map(() => startVal),
-              borderColor: '#D1D5DB',
-              borderDash: [4, 4],
-              borderWidth: 1,
-              pointRadius: 0,
-              fill: false
+              label: 'Inizio periodo', data: tempPoints.map(() => startVal),
+              borderColor: '#D1D5DB', borderDash: [4, 4], borderWidth: 1, pointRadius: 0, fill: false
             }
           ]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { display: false },
@@ -897,8 +877,7 @@
               callbacks: {
                 label: c => {
                   const diff = c.raw - startVal;
-                  const sign = diff >= 0 ? '+' : '';
-                  return `${fmtEur(c.raw)} (${sign}${fmtEur(diff)})`;
+                  return `${fmtEur(c.raw)} (${diff >= 0 ? '+' : ''}${fmtEur(diff)})`;
                 }
               }
             }
@@ -922,18 +901,41 @@
       renderDashboard();
     }
 
-    // ==================== GESTIONE CONTI ====================
-    function openAccountModal() { document.getElementById('account-modal').classList.remove('hidden'); }
+    // ==================== GESTIONE CONTI (NUOVO & MODIFICA) ====================
+    function openAccountModal() {
+      document.getElementById('account-form').reset();
+      document.getElementById('acc-edit-id').value = '';
+      document.getElementById('account-modal-title').textContent = 'Nuovo Conto / Asset';
+      document.getElementById('account-modal').classList.remove('hidden');
+    }
+
+    function openEditAccountModal(id) {
+      const acc = accounts.find(a => a.id === id);
+      if (!acc) return;
+      document.getElementById('acc-edit-id').value = acc.id;
+      document.getElementById('acc-name').value = acc.name;
+      document.getElementById('acc-category').value = acc.category;
+      document.getElementById('acc-balance').value = acc.balance;
+      document.getElementById('acc-rate').value = acc.interest_rate || 0;
+      document.getElementById('account-modal-title').textContent = 'Modifica Conto';
+      document.getElementById('account-modal').classList.remove('hidden');
+    }
+
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
     document.getElementById('account-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const { error } = await sb.from('accounts').insert({
+      const editId = document.getElementById('acc-edit-id').value;
+      const payload = {
         name: document.getElementById('acc-name').value.trim(),
         category: document.getElementById('acc-category').value,
         balance: parseFloat(document.getElementById('acc-balance').value) || 0,
         interest_rate: parseFloat(document.getElementById('acc-rate').value) || 0
-      });
+      };
+      const { error } = editId
+        ? await sb.from('accounts').update(payload).eq('id', editId)
+        : await sb.from('accounts').insert(payload);
+
       if (!error) { e.target.reset(); closeModal('account-modal'); await loadAllData(); }
       else alert(error.message);
     });
@@ -953,12 +955,29 @@
       document.getElementById('filter-account').innerHTML = '<option value="all">Tutti i conti</option>' + opts;
     }
 
-    // ==================== TRANSAZIONI & GIROCONTI ====================
+    // ==================== TRANSAZIONI (NUOVA & MODIFICA) ====================
     function openTxModal() {
       if (accounts.length === 0) { alert('Crea prima almeno un conto.'); return openAccountModal(); }
       document.getElementById('tx-form').reset();
+      document.getElementById('tx-edit-id').value = '';
+      document.getElementById('tx-modal-title').textContent = 'Nuova Operazione';
       setTxType('expense');
       document.getElementById('tx-date').value = getTodayISO();
+      document.getElementById('tx-modal').classList.remove('hidden');
+    }
+
+    function openEditTxModal(id) {
+      const t = transactions.find(x => x.id === id);
+      if (!t) return;
+      document.getElementById('tx-edit-id').value = t.id;
+      document.getElementById('tx-modal-title').textContent = 'Modifica Operazione';
+      setTxType(t.type);
+      document.getElementById('tx-amount').value = t.amount;
+      document.getElementById('tx-account').value = t.account_id;
+      if (t.target_account_id) document.getElementById('tx-target-account').value = t.target_account_id;
+      document.getElementById('tx-desc').value = t.description || '';
+      document.getElementById('tx-category').value = t.category || 'Generale';
+      document.getElementById('tx-date').value = t.date;
       document.getElementById('tx-modal').classList.remove('hidden');
     }
 
@@ -997,6 +1016,7 @@
 
     document.getElementById('tx-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const editId = document.getElementById('tx-edit-id').value;
       const type = document.getElementById('tx-type').value;
       const amount = Math.abs(parseFloat(document.getElementById('tx-amount').value));
       const account_id = document.getElementById('tx-account').value;
@@ -1006,21 +1026,31 @@
         return alert('Seleziona due conti diversi per il giroconto.');
       }
 
-      const { error } = await sb.from('transactions').insert({
+      const payload = {
         account_id, target_account_id, type, amount,
         description: document.getElementById('tx-desc').value.trim(),
         category: document.getElementById('tx-category').value.trim() || 'Generale',
-        date: document.getElementById('tx-date').value,
-        source: 'manual'
-      });
+        date: document.getElementById('tx-date').value
+      };
 
-      if (!error) {
-        await applyBalanceForTx(type, amount, account_id, target_account_id, false);
-        e.target.reset();
-        document.getElementById('tx-date').value = getTodayISO();
-        closeModal('tx-modal');
-        await loadAllData();
-      } else alert(error.message);
+      if (editId) {
+        const oldTx = transactions.find(x => x.id === editId);
+        const { error } = await sb.from('transactions').update(payload).eq('id', editId);
+        if (!error) {
+          if (oldTx) await applyBalanceForTx(oldTx.type, Number(oldTx.amount), oldTx.account_id, oldTx.target_account_id, true);
+          await applyBalanceForTx(type, amount, account_id, target_account_id, false);
+          closeModal('tx-modal');
+          await loadAllData();
+        } else alert(error.message);
+      } else {
+        payload.source = 'manual';
+        const { error } = await sb.from('transactions').insert(payload);
+        if (!error) {
+          await applyBalanceForTx(type, amount, account_id, target_account_id, false);
+          closeModal('tx-modal');
+          await loadAllData();
+        } else alert(error.message);
+      }
     });
 
     function renderTransactions() {
@@ -1050,7 +1080,10 @@
                 <td class="p-3 text-xs text-gray-600">${accLabel}</td>
                 <td class="p-3"><span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[11px]">${t.category}</span></td>
                 <td class="p-3 text-xs font-semibold text-right whitespace-nowrap ${color}">${sign}${fmtEur(t.amount)}</td>
-                <td class="p-3 text-right"><button onclick="deleteSingleTx('${t.id}')" class="text-gray-400 hover:text-red-600 text-xs">✕</button></td>
+                <td class="p-3 text-right whitespace-nowrap">
+                  <button onclick="openEditTxModal('${t.id}')" title="Modifica" class="text-gray-400 hover:text-gray-800 text-xs mr-2">✎</button>
+                  <button onclick="deleteSingleTx('${t.id}')" title="Elimina" class="text-gray-400 hover:text-red-600 text-xs">✕</button>
+                </td>
               </tr>
             `;
           }).join('');
@@ -1089,7 +1122,7 @@
       await loadAllData();
     }
 
-    // ==================== RICORRENZE ====================
+    // ==================== RICORRENZE EVOLUTE ====================
     function toggleRecTarget() {
       document.getElementById('rec-target').classList.toggle('hidden', document.getElementById('rec-type').value !== 'transfer');
     }
@@ -1097,6 +1130,17 @@
     document.getElementById('recurring-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const type = document.getElementById('rec-type').value;
+      const isProjOnly = document.getElementById('rec-proj-only').checked;
+      const day = parseInt(document.getElementById('rec-day').value);
+      const startDate = document.getElementById('rec-start').value;
+      const todayYM = getTodayISO().slice(0, 7);
+      const todayDay = new Date().getDate();
+
+      // Evita doppio addebito se crei oggi una ricorrenza il cui giorno del mese è già passato
+      let initialLastApplied = null;
+      if (isProjOnly) initialLastApplied = 'PROJECTION_ONLY';
+      else if (startDate.slice(0, 7) <= todayYM && day < todayDay) initialLastApplied = todayYM;
+
       const { error } = await sb.from('recurring_rules').insert({
         description: document.getElementById('rec-desc').value.trim(),
         type,
@@ -1104,9 +1148,10 @@
         account_id: document.getElementById('rec-account').value,
         target_account_id: type === 'transfer' ? document.getElementById('rec-target').value : null,
         category: document.getElementById('rec-cat').value.trim() || 'Ricorrente',
-        day_of_month: parseInt(document.getElementById('rec-day').value),
-        start_date: document.getElementById('rec-start').value,
-        end_date: document.getElementById('rec-end').value || null
+        day_of_month: day,
+        start_date: startDate,
+        end_date: document.getElementById('rec-end').value || null,
+        last_applied_month: initialLastApplied
       });
       if (!error) { e.target.reset(); document.getElementById('rec-start').value = getTodayISO(); await loadAllData(); }
       else alert(error.message);
@@ -1114,35 +1159,60 @@
 
     function renderRecurring() {
       const accMap = Object.fromEntries(accounts.map(a => [a.id, a.name]));
+      const currentYM = getTodayISO().slice(0, 7);
+
       document.getElementById('recurring-list').innerHTML = recurringRules.length === 0
         ? `<p class="text-xs text-gray-400">Nessuna regola ricorrente configurata.</p>`
-        : recurringRules.map(r => `
-            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3">
-              <div>
-                <p class="text-sm font-medium text-gray-900">${r.description} <span class="text-xs font-normal text-gray-400">· Giorno ${r.day_of_month}</span></p>
-                <p class="text-xs text-gray-500">${accMap[r.account_id] || ''} ${r.target_account_id ? '→ ' + accMap[r.target_account_id] : ''} · Dal ${fmtDateIT(r.start_date)} ${r.end_date ? 'al ' + fmtDateIT(r.end_date) : '(senza scadenza)'}</p>
+        : recurringRules.map(r => {
+            const isProjOnly = r.last_applied_month === 'PROJECTION_ONLY';
+            const isSkippedOrDone = r.last_applied_month === currentYM;
+            return `
+              <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 ${r.active ? '' : 'opacity-60'}">
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="text-sm font-medium text-gray-900">${r.description} <span class="text-xs font-normal text-gray-400">· Giorno ${r.day_of_month}</span></p>
+                    ${isProjOnly ? '<span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-medium">Solo Proiezione</span>' : ''}
+                    ${!r.active ? '<span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium">In pausa</span>' : ''}
+                    ${(!isProjOnly && isSkippedOrDone && r.active) ? '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[10px] font-medium">OK questo mese</span>' : ''}
+                  </div>
+                  <p class="text-xs text-gray-500 mt-0.5">${accMap[r.account_id] || ''} ${r.target_account_id ? '→ ' + accMap[r.target_account_id] : ''} · Dal ${fmtDateIT(r.start_date)} ${r.end_date ? 'al ' + fmtDateIT(r.end_date) : '(senza scadenza)'}</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-sm font-semibold mr-1 ${r.type === 'income' ? 'text-emerald-600' : 'text-gray-900'}">${fmtEur(r.amount)}</span>
+                  ${(!isProjOnly && !isSkippedOrDone && r.active) ? `<button onclick="skipRecurringThisMonth('${r.id}')" class="text-[11px] px-2.5 py-1 border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-50">Salta mese</button>` : ''}
+                  <button onclick="toggleRecurringActive('${r.id}', ${!r.active})" class="text-[11px] px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50">${r.active ? 'Pausa' : 'Riattiva'}</button>
+                  <button onclick="deleteRecurring('${r.id}')" class="text-[11px] text-gray-400 hover:text-red-600 px-1">✕</button>
+                </div>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="text-sm font-semibold ${r.type === 'income' ? 'text-emerald-600' : 'text-gray-900'}">${fmtEur(r.amount)}</span>
-                <button onclick="deleteRecurring('${r.id}')" class="text-xs text-gray-400 hover:text-red-600">Elimina</button>
-              </div>
-            </div>
-          `).join('');
+            `;
+          }).join('');
+    }
+
+    async function skipRecurringThisMonth(id) {
+      const currentYM = getTodayISO().slice(0, 7);
+      await sb.from('recurring_rules').update({ last_applied_month: currentYM }).eq('id', id);
+      await loadAllData();
+    }
+
+    async function toggleRecurringActive(id, newState) {
+      await sb.from('recurring_rules').update({ active: newState }).eq('id', id);
+      await loadAllData();
     }
 
     async function deleteRecurring(id) {
+      if (!confirm('Eliminare questa regola ricorrente?')) return;
       await sb.from('recurring_rules').delete().eq('id', id);
       await loadAllData();
     }
 
-    async function applyDueRecurring(silent = false) {
+    async function applyDueRecurring() {
       const today = getTodayISO();
       const currentYM = today.slice(0, 7);
       const todayDay = new Date().getDate();
       let applied = 0;
 
       for (const r of recurringRules) {
-        if (!r.active || r.last_applied_month === currentYM) continue;
+        if (!r.active || r.last_applied_month === 'PROJECTION_ONLY' || r.last_applied_month === currentYM) continue;
         if (r.start_date > today) continue;
         if (r.end_date && r.end_date < today) continue;
         if (todayDay < r.day_of_month) continue;
@@ -1160,12 +1230,9 @@
         applied++;
       }
       if (applied > 0) await loadAllData();
-      if (!silent) {
-        alert(applied > 0 ? `Applicate ${applied} ricorrenze scadute.` : 'Nessuna nuova ricorrenza da applicare oggi.');
-      }
     }
 
-    // ==================== PROIEZIONE PERSONALIZZATA MULTI-LINEA ====================
+    // ==================== PROIEZIONE MULTI-LINEA (NETTO 26% SU REMUNERATI) ====================
     function runProjection() {
       const endDateStr = document.getElementById('proj-end-date').value;
       if (!endDateStr) return;
@@ -1177,7 +1244,6 @@
       if (months > 360) months = 360;
 
       const invRateMonthly = ((parseFloat(document.getElementById('proj-inv-rate').value) || 0) / 100) / 12;
-      const remRateMonthly = ((parseFloat(document.getElementById('proj-rem-rate').value) || 0) / 100) / 12;
 
       const simBalances = {};
       accounts.forEach(a => simBalances[a.id] = Number(a.balance) || 0);
@@ -1233,11 +1299,13 @@
           }
         });
 
+        // Interessi composti: investimenti al rendimento stimato, conti remunerati al proprio tasso NETTO (74%)
         accounts.forEach(a => {
           if (a.category === 'investments' && simBalances[a.id] > 0) {
             simBalances[a.id] *= (1 + invRateMonthly);
           } else if (a.category === 'cash' && Number(a.interest_rate) > 0 && simBalances[a.id] > 0) {
-            simBalances[a.id] *= (1 + remRateMonthly);
+            const netMonthlyRate = ((Number(a.interest_rate) / 100) * 0.74) / 12;
+            simBalances[a.id] *= (1 + netMonthlyRate);
           }
         });
 
@@ -1275,7 +1343,7 @@
       });
     }
 
-    // ==================== IMPORTAZIONE SMART CON GEMINI ====================
+    // ==================== IMPORTAZIONE SMART CON TOLLERANZA ±3 GIORNI ====================
     async function parseBankFileWithAI() {
       const apiKey = localStorage.getItem('gemini_api_key');
       if (!apiKey) return alert('Inserisci prima la tua Gemini API Key nella scheda Impostazioni.');
@@ -1316,8 +1384,15 @@ Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON val
         parsedImportRows = JSON.parse(rawText);
 
         const targetAcc = document.getElementById('import-account').value;
+        const THREE_DAYS_MS = 3 * 86400000;
+
         document.getElementById('import-preview-body').innerHTML = parsedImportRows.map((row, idx) => {
-          const isDup = transactions.some(t => t.account_id === targetAcc && t.date === row.date && Math.abs(Number(t.amount) - Number(row.amount)) < 0.01);
+          const rowTime = new Date(row.date).getTime();
+          const isDup = transactions.some(t =>
+            t.account_id === targetAcc &&
+            Math.abs(Number(t.amount) - Number(row.amount)) < 0.01 &&
+            Math.abs(new Date(t.date).getTime() - rowTime) <= THREE_DAYS_MS
+          );
           return `
             <tr class="${isDup ? 'bg-amber-50' : ''}">
               <td class="p-2"><input type="checkbox" class="imp-check" data-idx="${idx}" ${isDup ? '' : 'checked'} /></td>
@@ -1377,8 +1452,8 @@ Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON val
 
       const contextData = {
         oggi: getTodayISO(),
-        conti: accounts.map(a => ({ nome: a.name, categoria: a.category, saldo: a.balance, tasso: a.interest_rate })),
-        ricorrenze: recurringRules.map(r => ({ desc: r.description, tipo: r.type, importo: r.amount, giorno: r.day_of_month, fine: r.end_date })),
+        conti: accounts.map(a => ({ nome: a.name, categoria: a.category, saldo: a.balance, tasso_lordo: a.interest_rate })),
+        ricorrenze: recurringRules.filter(r => r.active).map(r => ({ desc: r.description, tipo: r.type, importo: r.amount, giorno: r.day_of_month, solo_proiezione: r.last_applied_month === 'PROJECTION_ONLY', fine: r.end_date })),
         ultime_50_transazioni: transactions.slice(0, 50).map(t => ({ data: t.date, tipo: t.type, importo: t.amount, cat: t.category, desc: t.description }))
       };
 
