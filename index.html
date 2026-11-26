@@ -20,15 +20,28 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #F9FAFB; color: #111827; }
-    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 9999px; }
     html, body {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
       overscroll-behavior: none;
       touch-action: manipulation;
       -webkit-user-select: none;
       user-select: none;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #F9FAFB;
+      color: #111827;
     }
+    input, select, textarea {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 9999px; }
     @media (max-width: 768px) {
       input, select, textarea { font-size: 16px !important; }
     }
@@ -36,10 +49,10 @@
     .safe-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
   </style>
 </head>
-<body class="h-screen overflow-hidden flex flex-col">
+<body class="flex flex-col">
 
   <!-- ==================== SCHERMATA LOGIN ==================== -->
-  <div id="auth-screen" class="fixed inset-0 z-50 bg-[#F9FAFB] flex items-center justify-center p-4">
+  <div id="auth-screen" class="fixed inset-0 z-50 bg-[#F9FAFB] flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-white border border-gray-200 rounded-2xl shadow-sm w-full max-w-sm p-8">
       <div class="flex items-center gap-2.5 mb-6">
         <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center font-bold">N</div>
@@ -64,7 +77,7 @@
   </div>
 
   <!-- ==================== APP PRINCIPALE ==================== -->
-  <div id="app-screen" class="hidden flex-1 flex h-full overflow-hidden">
+  <div id="app-screen" class="hidden flex-1 flex h-full w-full overflow-hidden">
 
     <!-- RAIL ICONE SINISTRA (Desktop) -->
     <aside class="hidden md:flex flex-col items-center w-14 bg-white border-r border-gray-200 py-4 justify-between shrink-0">
@@ -99,8 +112,8 @@
     </aside>
 
     <!-- AREA PRINCIPALE -->
-    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <header class="bg-white border-b border-gray-200 safe-top shrink-0">
+    <main class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      <header class="bg-white border-b border-gray-200 safe-top shrink-0 z-20">
         <div class="h-14 px-4 md:px-6 flex items-center justify-between">
           <div class="flex items-center gap-2.5 text-xs text-gray-500">
             <button onclick="toggleMobileMenu()" class="md:hidden p-1.5 -ml-1.5 rounded-lg text-gray-700 hover:bg-gray-100" aria-label="Menu">
@@ -120,7 +133,7 @@
       </header>
 
       <!-- CONTENUTO SCROLLABILE -->
-      <div class="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8 pb-16 md:pb-8">
+      <div id="main-scroll" class="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-8 pb-20 md:pb-8">
         <div class="max-w-5xl mx-auto">
 
           <!-- ========== TAB 1: DASHBOARD ========== -->
@@ -163,6 +176,15 @@
               </div>
             </div>
 
+            <!-- Finestrelle Conti & Saldo Netto Totale -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-900">Riepilogo Conti</h3>
+                <button onclick="openAccountModal()" class="text-xs font-medium text-gray-600 hover:text-gray-900">+ Aggiungi conto</button>
+              </div>
+              <div id="dash-accounts-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+            </div>
+
             <!-- Card Allocazione Asset -->
             <div class="bg-white border border-gray-200 rounded-2xl p-5 md:p-6 shadow-xs">
               <div class="flex items-center justify-between mb-4">
@@ -183,15 +205,6 @@
                 </table>
               </div>
             </div>
-
-            <!-- Lista rapida conti visibile su Mobile -->
-            <div class="lg:hidden bg-white border border-gray-200 rounded-2xl p-5">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-semibold text-gray-900">I tuoi Conti & Debiti</h3>
-                <button onclick="openAccountModal()" class="text-xs font-medium text-gray-600">+ Aggiungi</button>
-              </div>
-              <div id="mobile-accounts-list" class="space-y-2"></div>
-            </div>
           </section>
 
           <!-- ========== TAB 2: TRANSAZIONI ========== -->
@@ -199,7 +212,7 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 class="text-xl font-semibold text-gray-900">Transazioni</h2>
-                <p class="text-xs text-gray-500">Storico completo entrate, uscite e giroconti</p>
+                <p class="text-xs text-gray-500">Storico completo entrate, uscite, giroconti e movimenti programmati</p>
               </div>
               <div class="flex items-center gap-2">
                 <button id="bulk-delete-btn" onclick="bulkDeleteTransactions()" class="hidden text-xs font-medium px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition">Elimina selezionati</button>
@@ -285,7 +298,7 @@
           <section id="tab-simulator" class="hidden space-y-5">
             <div>
               <h2 class="text-xl font-semibold text-gray-900">Proiezione Patrimonio & Debiti</h2>
-              <p class="text-xs text-gray-500">Simula l'andamento reale dei tuoi conti e delle ricorrenze fino alla data che scegli.</p>
+              <p class="text-xs text-gray-500">Simula l'andamento reale dei tuoi conti, delle ricorrenze e dei movimenti futuri programmati.</p>
             </div>
 
             <div class="bg-white border border-gray-200 rounded-2xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -349,8 +362,14 @@
             </div>
 
             <div id="import-preview-box" class="hidden bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
-              <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-gray-900">Anteprima Movimenti Estratti</h3>
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-sm font-semibold text-gray-900">Anteprima Movimenti Estratti</h3>
+                  <label class="inline-flex items-center gap-1.5 mt-1 text-xs text-gray-600 cursor-pointer">
+                    <input type="checkbox" id="import-update-balance" checked class="rounded border-gray-300" />
+                    Aggiorna anche il saldo del conto (deseleziona se stai importando uno storico già incluso nel saldo)
+                  </label>
+                </div>
                 <button onclick="confirmBankImport()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-4 py-2 rounded-lg">Importa Selezionati</button>
               </div>
               <div class="overflow-x-auto">
@@ -372,7 +391,7 @@
           </section>
 
           <!-- ========== TAB 6: ASSISTENTE IA ========== -->
-          <section id="tab-ai" class="hidden flex flex-col h-[calc(100vh-10rem)]">
+          <section id="tab-ai" class="hidden flex flex-col h-[calc(100dvh-10rem)]">
             <div class="mb-3">
               <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-indigo-600"></i> Assistente Finanziario IA</h2>
               <p class="text-xs text-gray-500">Legge in tempo reale i tuoi conti, le spese recenti e le ricorrenze su Supabase.</p>
@@ -474,7 +493,7 @@
   </div>
 
   <!-- ==================== MODALE CONTO (NUOVO / MODIFICA) ==================== -->
-  <div id="account-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+  <div id="account-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center">
         <h3 id="account-modal-title" class="text-base font-semibold">Nuovo Conto / Asset</h3>
@@ -501,12 +520,13 @@
           </div>
         </div>
         <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 rounded-lg">Salva Conto</button>
+        <button type="button" id="acc-delete-btn" onclick="deleteAccountFromModal()" class="hidden w-full bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium py-2.5 rounded-lg transition">Elimina questo conto</button>
       </form>
     </div>
   </div>
 
   <!-- ==================== MODALE TRANSAZIONE (NUOVA / MODIFICA) ==================== -->
-  <div id="tx-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+  <div id="tx-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center">
         <h3 id="tx-modal-title" class="text-base font-semibold">Nuova Operazione</h3>
@@ -534,6 +554,7 @@
           <input type="text" id="tx-category" placeholder="Categoria" value="Generale" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
           <input type="date" id="tx-date" required class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
         </div>
+        <p class="text-[11px] text-gray-400">Se scegli una data futura, il saldo si aggiornerà automaticamente solo quel giorno (ma apparirà già nelle Proiezioni).</p>
         <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 rounded-lg">Salva Movimento</button>
       </form>
     </div>
@@ -546,6 +567,7 @@
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentUser = null;
+    let isAppInitialized = false;
     let accounts = [];
     let transactions = [];
     let recurringRules = [];
@@ -574,6 +596,19 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
 
+    // Fix iOS: evita che la tastiera lasci l'HUD spostato sotto la barra di stato
+    function resetIOSViewport() {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+    document.addEventListener('focusout', () => setTimeout(resetIOSViewport, 60));
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        if (window.visualViewport.height >= window.innerHeight - 80) resetIOSViewport();
+      });
+    }
+
     function refreshTodayDates() {
       const todayISO = getTodayISO();
       const niceDate = new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
@@ -601,9 +636,12 @@
       const { data: { session } } = await sb.auth.getSession();
       if (session) onAuthenticated(session.user);
 
-      sb.auth.onAuthStateChange((_event, session) => {
-        if (session) onAuthenticated(session.user);
-        else {
+      sb.auth.onAuthStateChange((event, session) => {
+        if (session) {
+          if (!isAppInitialized) onAuthenticated(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          isAppInitialized = false;
+          currentUser = null;
           document.getElementById('auth-screen').classList.remove('hidden');
           document.getElementById('app-screen').classList.add('hidden');
         }
@@ -623,15 +661,21 @@
       }
     });
 
-    async function logout() { await sb.auth.signOut(); }
+    async function logout() {
+      isAppInitialized = false;
+      await sb.auth.signOut();
+    }
 
     async function onAuthenticated(user) {
+      if (isAppInitialized) return;
+      isAppInitialized = true;
       currentUser = user;
       document.getElementById('auth-screen').classList.add('hidden');
       document.getElementById('app-screen').classList.remove('hidden');
       document.getElementById('settings-user-email').textContent = user.email;
       refreshTodayDates();
       await loadAllData();
+      await applyDueScheduledTransactions();
       await applyDueRecurring();
       switchTab('dashboard');
     }
@@ -655,6 +699,19 @@
       lucide.createIcons();
     }
 
+    // Applica automaticamente le transazioni programmate la cui data è arrivata
+    async function applyDueScheduledTransactions() {
+      const todayISO = getTodayISO();
+      const due = transactions.filter(t => t.source === 'scheduled' && t.date <= todayISO);
+      if (due.length === 0) return;
+
+      for (const t of due) {
+        await applyBalanceForTx(t.type, Number(t.amount), t.account_id, t.target_account_id, false);
+        await sb.from('transactions').update({ source: 'manual' }).eq('id', t.id);
+      }
+      await loadAllData();
+    }
+
     // ==================== NAVIGAZIONE ====================
     function toggleMobileMenu(forceState) {
       const menu = document.getElementById('mobile-drawer');
@@ -672,6 +729,7 @@
 
     function switchTab(tab) {
       toggleMobileMenu(false);
+      resetIOSViewport();
       document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
       document.getElementById(`tab-${tab}`).classList.remove('hidden');
       const titles = {
@@ -699,7 +757,6 @@
 
     function renderSidebar() {
       const container = document.getElementById('sidebar-accounts');
-      const mobContainer = document.getElementById('mobile-accounts-list');
       const filtered = accounts.filter(a => {
         if (sidebarFilter === 'assets') return a.category !== 'debt';
         if (sidebarFilter === 'debts') return a.category === 'debt';
@@ -738,24 +795,13 @@
               </div>
             `;
           }).join('');
-
-      mobContainer.innerHTML = accounts.length === 0
-        ? `<p class="text-xs text-gray-400">Nessun conto aggiunto.</p>`
-        : accounts.map(acc => `
-            <div class="flex items-center justify-between py-2 border-b border-gray-50 text-xs">
-              <span class="font-medium text-gray-800">${acc.name} <span class="text-[10px] text-gray-400">(${CAT_META[acc.category]?.label || acc.category})</span></span>
-              <div class="flex items-center gap-2.5">
-                <span class="font-semibold ${acc.category === 'debt' ? 'text-red-600' : 'text-gray-900'}">${fmtEur(acc.balance)}</span>
-                <button onclick="openEditAccountModal('${acc.id}')" class="text-gray-400 hover:text-gray-800">✎</button>
-              </div>
-            </div>
-          `).join('');
     }
 
-    // ==================== DASHBOARD (STILE TRADE REPUBLIC) ====================
+    // ==================== DASHBOARD (STILE TRADE REPUBLIC + FINESTRELLE CONTI) ====================
     function renderDashboard() {
       const assetsSum = accounts.filter(a => a.category !== 'debt').reduce((s, a) => s + Number(a.balance), 0);
       const debtsSum = accounts.filter(a => a.category === 'debt').reduce((s, a) => s + Number(a.balance), 0);
+      const netWorth = assetsSum - debtsSum;
 
       document.getElementById('dash-networth').textContent = fmtEur(assetsSum);
       document.getElementById('dash-total-assets').textContent = `· ${fmtEur(assetsSum)}`;
@@ -768,8 +814,48 @@
         debtBadge.classList.add('hidden');
       }
 
-      const nowYM = getTodayISO().slice(0, 7);
-      const monthTx = transactions.filter(t => t.date.startsWith(nowYM));
+      // Finestrelle conti in Dashboard
+      const grid = document.getElementById('dash-accounts-grid');
+      const netCard = `
+        <div class="bg-gray-900 text-white rounded-xl p-4 flex flex-col justify-between">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-medium text-gray-300">Saldo Netto Totale</span>
+          </div>
+          <p class="text-lg md:text-xl font-bold mt-2">${fmtEur(netWorth)}</p>
+          <p class="text-[10px] text-gray-400 mt-1">${debtsSum > 0 ? 'Asset meno debiti' : 'Tutti i tuoi conti'}</p>
+        </div>
+      `;
+
+      const accCards = accounts.map(acc => {
+        const meta = CAT_META[acc.category] || { label: acc.category, color: '#6B7280' };
+        const isDebt = acc.category === 'debt';
+        return `
+          <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-between hover:border-gray-300 transition">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="w-2 h-2 rounded-full shrink-0" style="background:${meta.color}"></span>
+                <span class="text-xs font-medium text-gray-600 truncate">${acc.name}</span>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="openEditAccountModal('${acc.id}')" title="Modifica" class="text-gray-400 hover:text-gray-800 text-xs leading-none">✎</button>
+                <button onclick="deleteAccount('${acc.id}')" title="Elimina" class="text-gray-400 hover:text-red-600 text-xs leading-none">✕</button>
+              </div>
+            </div>
+            <p class="text-lg md:text-xl font-bold mt-2 ${isDebt ? 'text-red-600' : 'text-gray-900'}">${isDebt ? '-' : ''}${fmtEur(acc.balance)}</p>
+            <div class="flex items-center justify-between mt-1">
+              <span class="text-[10px] text-gray-400">${meta.label}</span>
+              ${Number(acc.interest_rate) > 0 ? `<span class="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">${acc.interest_rate}%</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      grid.innerHTML = netCard + accCards;
+
+      // Flusso mese (esclude movimenti futuri programmati)
+      const todayISO = getTodayISO();
+      const nowYM = todayISO.slice(0, 7);
+      const monthTx = transactions.filter(t => t.date.startsWith(nowYM) && t.source !== 'scheduled' && t.date <= todayISO);
       const mIn = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
       const mOut = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
       const delta = mIn - mOut;
@@ -812,12 +898,12 @@
         `;
       }).join('');
 
-      // Grafico stile Trade Republic
-      const todayISO = getTodayISO();
+      // Grafico stile Trade Republic (ignora i movimenti programmati futuri)
       let runningCap = assetsSum;
       const txByDate = {};
 
       transactions.forEach(t => {
+        if (t.source === 'scheduled') return;
         const acc = accounts.find(a => a.id === t.account_id);
         const target = accounts.find(a => a.id === t.target_account_id);
         let deltaDay = 0;
@@ -901,11 +987,12 @@
       renderDashboard();
     }
 
-    // ==================== GESTIONE CONTI (NUOVO & MODIFICA) ====================
+    // ==================== GESTIONE CONTI (NUOVO, MODIFICA, ELIMINA) ====================
     function openAccountModal() {
       document.getElementById('account-form').reset();
       document.getElementById('acc-edit-id').value = '';
       document.getElementById('account-modal-title').textContent = 'Nuovo Conto / Asset';
+      document.getElementById('acc-delete-btn').classList.add('hidden');
       document.getElementById('account-modal').classList.remove('hidden');
     }
 
@@ -918,10 +1005,14 @@
       document.getElementById('acc-balance').value = acc.balance;
       document.getElementById('acc-rate').value = acc.interest_rate || 0;
       document.getElementById('account-modal-title').textContent = 'Modifica Conto';
+      document.getElementById('acc-delete-btn').classList.remove('hidden');
       document.getElementById('account-modal').classList.remove('hidden');
     }
 
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      resetIOSViewport();
+    }
 
     document.getElementById('account-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -940,10 +1031,22 @@
       else alert(error.message);
     });
 
+    async function deleteAccountFromModal() {
+      const id = document.getElementById('acc-edit-id').value;
+      if (!id) return;
+      const deleted = await deleteAccount(id);
+      if (deleted) closeModal('account-modal');
+    }
+
     async function deleteAccount(id) {
-      if (!confirm('Eliminare questo conto e tutte le sue transazioni?')) return;
-      await sb.from('accounts').delete().eq('id', id);
+      if (!confirm('Eliminare questo conto e tutte le sue transazioni?')) return false;
+      const { error } = await sb.from('accounts').delete().eq('id', id);
+      if (error) {
+        alert('Impossibile eliminare il conto: ' + error.message);
+        return false;
+      }
       await loadAllData();
+      return true;
     }
 
     function populateAccountSelects() {
@@ -955,7 +1058,7 @@
       document.getElementById('filter-account').innerHTML = '<option value="all">Tutti i conti</option>' + opts;
     }
 
-    // ==================== TRANSAZIONI (NUOVA & MODIFICA) ====================
+    // ==================== TRANSAZIONI (NUOVA, MODIFICA, PROGRAMMATE) ====================
     function openTxModal() {
       if (accounts.length === 0) { alert('Crea prima almeno un conto.'); return openAccountModal(); }
       document.getElementById('tx-form').reset();
@@ -1021,6 +1124,8 @@
       const amount = Math.abs(parseFloat(document.getElementById('tx-amount').value));
       const account_id = document.getElementById('tx-account').value;
       const target_account_id = type === 'transfer' ? document.getElementById('tx-target-account').value : null;
+      const txDate = document.getElementById('tx-date').value;
+      const isFuture = txDate > getTodayISO();
 
       if (type === 'transfer' && account_id === target_account_id) {
         return alert('Seleziona due conti diversi per il giroconto.');
@@ -1030,23 +1135,30 @@
         account_id, target_account_id, type, amount,
         description: document.getElementById('tx-desc').value.trim(),
         category: document.getElementById('tx-category').value.trim() || 'Generale',
-        date: document.getElementById('tx-date').value
+        date: txDate
       };
 
       if (editId) {
         const oldTx = transactions.find(x => x.id === editId);
+        payload.source = isFuture ? 'scheduled' : (oldTx?.source === 'scheduled' ? 'manual' : (oldTx?.source || 'manual'));
         const { error } = await sb.from('transactions').update(payload).eq('id', editId);
         if (!error) {
-          if (oldTx) await applyBalanceForTx(oldTx.type, Number(oldTx.amount), oldTx.account_id, oldTx.target_account_id, true);
-          await applyBalanceForTx(type, amount, account_id, target_account_id, false);
+          if (oldTx && oldTx.source !== 'scheduled') {
+            await applyBalanceForTx(oldTx.type, Number(oldTx.amount), oldTx.account_id, oldTx.target_account_id, true);
+          }
+          if (!isFuture) {
+            await applyBalanceForTx(type, amount, account_id, target_account_id, false);
+          }
           closeModal('tx-modal');
           await loadAllData();
         } else alert(error.message);
       } else {
-        payload.source = 'manual';
+        payload.source = isFuture ? 'scheduled' : 'manual';
         const { error } = await sb.from('transactions').insert(payload);
         if (!error) {
-          await applyBalanceForTx(type, amount, account_id, target_account_id, false);
+          if (!isFuture) {
+            await applyBalanceForTx(type, amount, account_id, target_account_id, false);
+          }
           closeModal('tx-modal');
           await loadAllData();
         } else alert(error.message);
@@ -1069,14 +1181,18 @@
       document.getElementById('tx-table-body').innerHTML = list.length === 0
         ? `<tr><td colspan="7" class="p-8 text-center text-xs text-gray-400">Nessuna transazione trovata.</td></tr>`
         : list.map(t => {
+            const isScheduled = t.source === 'scheduled';
             const sign = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : '⇄ ';
             const color = t.type === 'income' ? 'text-emerald-600' : t.type === 'expense' ? 'text-gray-900' : 'text-indigo-600';
             const accLabel = t.type === 'transfer' ? `${accMap[t.account_id] || '?'} → ${accMap[t.target_account_id] || '?'}` : (accMap[t.account_id] || '?');
             return `
-              <tr class="hover:bg-gray-50">
+              <tr class="hover:bg-gray-50 ${isScheduled ? 'bg-amber-50/40' : ''}">
                 <td class="p-3"><input type="checkbox" class="tx-check" value="${t.id}" onchange="updateBulkBtn()" /></td>
                 <td class="p-3 text-xs text-gray-500 whitespace-nowrap">${fmtDateIT(t.date)}</td>
-                <td class="p-3 text-xs font-medium text-gray-900">${t.description || '-'}</td>
+                <td class="p-3 text-xs font-medium text-gray-900">
+                  ${t.description || '-'}
+                  ${isScheduled ? '<span class="ml-1.5 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">Programmata</span>' : ''}
+                </td>
                 <td class="p-3 text-xs text-gray-600">${accLabel}</td>
                 <td class="p-3"><span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[11px]">${t.category}</span></td>
                 <td class="p-3 text-xs font-semibold text-right whitespace-nowrap ${color}">${sign}${fmtEur(t.amount)}</td>
@@ -1105,7 +1221,9 @@
     async function revertAndDeleteTx(txId) {
       const t = transactions.find(x => x.id === txId);
       if (!t) return;
-      await applyBalanceForTx(t.type, Number(t.amount), t.account_id, t.target_account_id, true);
+      if (t.source !== 'scheduled') {
+        await applyBalanceForTx(t.type, Number(t.amount), t.account_id, t.target_account_id, true);
+      }
       await sb.from('transactions').delete().eq('id', txId);
     }
 
@@ -1136,7 +1254,6 @@
       const todayYM = getTodayISO().slice(0, 7);
       const todayDay = new Date().getDate();
 
-      // Evita doppio addebito se crei oggi una ricorrenza il cui giorno del mese è già passato
       let initialLastApplied = null;
       if (isProjOnly) initialLastApplied = 'PROJECTION_ONLY';
       else if (startDate.slice(0, 7) <= todayYM && day < todayDay) initialLastApplied = todayYM;
@@ -1206,18 +1323,22 @@
     }
 
     async function applyDueRecurring() {
+      const now = new Date();
       const today = getTodayISO();
       const currentYM = today.slice(0, 7);
-      const todayDay = new Date().getDate();
+      const todayDay = now.getDate();
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
       let applied = 0;
 
       for (const r of recurringRules) {
         if (!r.active || r.last_applied_month === 'PROJECTION_ONLY' || r.last_applied_month === currentYM) continue;
         if (r.start_date > today) continue;
         if (r.end_date && r.end_date < today) continue;
-        if (todayDay < r.day_of_month) continue;
 
-        const dayStr = String(Math.min(r.day_of_month, 28)).padStart(2, '0');
+        const effectiveDay = Math.min(r.day_of_month, lastDayOfMonth);
+        if (todayDay < effectiveDay) continue;
+
+        const dayStr = String(effectiveDay).padStart(2, '0');
         const txDate = `${currentYM}-${dayStr}`;
 
         await sb.from('transactions').insert({
@@ -1232,12 +1353,13 @@
       if (applied > 0) await loadAllData();
     }
 
-    // ==================== PROIEZIONE MULTI-LINEA (NETTO 26% SU REMUNERATI) ====================
+    // ==================== PROIEZIONE MULTI-LINEA (NETTO 26% + PROGRAMMATE) ====================
     function runProjection() {
       const endDateStr = document.getElementById('proj-end-date').value;
       if (!endDateStr) return;
 
       const start = new Date();
+      const todayISO = getTodayISO();
       const end = new Date(endDateStr + 'T00:00:00');
       let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
       if (months < 1) months = 1;
@@ -1247,6 +1369,28 @@
 
       const simBalances = {};
       accounts.forEach(a => simBalances[a.id] = Number(a.balance) || 0);
+
+      const applySimMove = (type, amount, account_id, target_account_id) => {
+        const amt = Number(amount) || 0;
+        if (type === 'income') {
+          if (simBalances[account_id] !== undefined) simBalances[account_id] += amt;
+        } else if (type === 'expense') {
+          if (simBalances[account_id] !== undefined) simBalances[account_id] -= amt;
+        } else if (type === 'transfer') {
+          const targetAcc = accounts.find(a => a.id === target_account_id);
+          if (targetAcc && targetAcc.category === 'debt') {
+            const pay = Math.min(amt, Math.max(0, simBalances[target_account_id] || 0));
+            if (simBalances[account_id] !== undefined) simBalances[account_id] -= pay;
+            simBalances[target_account_id] = Math.max(0, (simBalances[target_account_id] || 0) - pay);
+          } else {
+            if (simBalances[account_id] !== undefined) simBalances[account_id] -= amt;
+            if (simBalances[target_account_id] !== undefined) simBalances[target_account_id] += amt;
+          }
+        }
+      };
+
+      const scheduledTx = transactions.filter(t => t.source === 'scheduled' && t.date > todayISO);
+      const currentYM = todayISO.slice(0, 7);
 
       const labels = [], totalArr = [], invArr = [], remArr = [], debtArr = [];
 
@@ -1271,32 +1415,27 @@
 
       snapshot('Oggi');
 
+      // Applica eventuali movimenti programmati che cadono nel resto del mese corrente
+      scheduledTx.filter(t => t.date.startsWith(currentYM)).forEach(t => {
+        applySimMove(t.type, t.amount, t.account_id, t.target_account_id);
+      });
+
       for (let m = 1; m <= months; m++) {
         const cur = new Date(start.getFullYear(), start.getMonth() + m, 1);
-        const curISO = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-15`;
+        const curYM = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
         const lbl = `${String(cur.getMonth() + 1).padStart(2, '0')}/${String(cur.getFullYear()).slice(2)}`;
 
+        // Ricorrenze attive nel mese curYM
         recurringRules.forEach(r => {
           if (!r.active) return;
-          if (r.start_date && r.start_date > curISO) return;
-          if (r.end_date && r.end_date < curISO) return;
+          if (r.start_date && r.start_date.slice(0, 7) > curYM) return;
+          if (r.end_date && r.end_date.slice(0, 7) < curYM) return;
+          applySimMove(r.type, r.amount, r.account_id, r.target_account_id);
+        });
 
-          const amt = Number(r.amount) || 0;
-          if (r.type === 'income') {
-            if (simBalances[r.account_id] !== undefined) simBalances[r.account_id] += amt;
-          } else if (r.type === 'expense') {
-            if (simBalances[r.account_id] !== undefined) simBalances[r.account_id] -= amt;
-          } else if (r.type === 'transfer') {
-            const targetAcc = accounts.find(a => a.id === r.target_account_id);
-            if (targetAcc && targetAcc.category === 'debt') {
-              const pay = Math.min(amt, Math.max(0, simBalances[r.target_account_id] || 0));
-              if (simBalances[r.account_id] !== undefined) simBalances[r.account_id] -= pay;
-              simBalances[r.target_account_id] = Math.max(0, (simBalances[r.target_account_id] || 0) - pay);
-            } else {
-              if (simBalances[r.account_id] !== undefined) simBalances[r.account_id] -= amt;
-              if (simBalances[r.target_account_id] !== undefined) simBalances[r.target_account_id] += amt;
-            }
-          }
+        // Movimenti programmati futuri che cadono in curYM
+        scheduledTx.filter(t => t.date.startsWith(curYM)).forEach(t => {
+          applySimMove(t.type, t.amount, t.account_id, t.target_account_id);
         });
 
         // Interessi composti: investimenti al rendimento stimato, conti remunerati al proprio tasso NETTO (74%)
@@ -1357,7 +1496,7 @@
       try {
         const parts = [{
           text: `Sei un estrattore dati bancari per estratti conto italiani (UniCredit e Trade Republic).
-Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON valido (senza markdown) con:
+Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON valido con oggetti:
 {"date": "YYYY-MM-DD", "description": "descrizione breve", "amount": 12.50, "type": "expense" oppure "income", "category": "una parola"}`
         }];
 
@@ -1375,7 +1514,10 @@ Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON val
 
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts }] })
+          body: JSON.stringify({
+            contents: [{ parts }],
+            generationConfig: { responseMimeType: 'application/json' }
+          })
         });
         const data = await resp.json();
         if (data.error) throw new Error(data.error.message);
@@ -1414,6 +1556,7 @@ Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON val
 
     async function confirmBankImport() {
       const account_id = document.getElementById('import-account').value;
+      const shouldUpdateBalance = document.getElementById('import-update-balance').checked;
       const checked = Array.from(document.querySelectorAll('.imp-check:checked')).map(c => parsedImportRows[Number(c.dataset.idx)]);
       if (checked.length === 0) return alert('Nessun movimento selezionato.');
 
@@ -1426,7 +1569,7 @@ Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON val
 
       const { error } = await sb.from('transactions').insert(toInsert);
       if (!error) {
-        await adjustAccountBalance(account_id, netDelta);
+        if (shouldUpdateBalance) await adjustAccountBalance(account_id, netDelta);
         document.getElementById('import-preview-box').classList.add('hidden');
         alert(`Importati ${toInsert.length} movimenti!`);
         await loadAllData();
@@ -1454,7 +1597,7 @@ Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON val
         oggi: getTodayISO(),
         conti: accounts.map(a => ({ nome: a.name, categoria: a.category, saldo: a.balance, tasso_lordo: a.interest_rate })),
         ricorrenze: recurringRules.filter(r => r.active).map(r => ({ desc: r.description, tipo: r.type, importo: r.amount, giorno: r.day_of_month, solo_proiezione: r.last_applied_month === 'PROJECTION_ONLY', fine: r.end_date })),
-        ultime_50_transazioni: transactions.slice(0, 50).map(t => ({ data: t.date, tipo: t.type, importo: t.amount, cat: t.category, desc: t.description }))
+        ultime_50_transazioni: transactions.slice(0, 50).map(t => ({ data: t.date, tipo: t.type, importo: t.amount, cat: t.category, desc: t.description, programmata: t.source === 'scheduled' }))
       };
 
       try {
