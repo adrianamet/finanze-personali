@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Nexo" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" id="meta-theme-color" content="#ffffff" />
 
   <!-- Librerie esterne -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -47,9 +47,53 @@
     }
     .safe-top { padding-top: env(safe-area-inset-top); }
     .safe-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+
+    /* ==================== DARK MODE ==================== */
+    html.dark, html.dark body { background-color: #0B0F19 !important; color: #F3F4F6 !important; }
+    html.dark .bg-\[\#F9FAFB\] { background-color: #0B0F19 !important; }
+    html.dark .bg-white { background-color: #111827 !important; }
+    html.dark .bg-gray-50 { background-color: #1F2937 !important; }
+    html.dark .bg-gray-100 { background-color: #1F2937 !important; }
+    html.dark .border-gray-200 { border-color: #1F2937 !important; }
+    html.dark .border-gray-100 { border-color: #1F2937 !important; }
+    html.dark .border-gray-300 { border-color: #374151 !important; }
+    html.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1F2937 !important; }
+    html.dark .text-gray-900 { color: #F9FAFB !important; }
+    html.dark .text-gray-800 { color: #E5E7EB !important; }
+    html.dark .text-gray-700 { color: #D1D5DB !important; }
+    html.dark .text-gray-600 { color: #9CA3AF !important; }
+    html.dark .text-gray-500 { color: #9CA3AF !important; }
+    html.dark .hover\:bg-gray-50:hover { background-color: #1F2937 !important; }
+    html.dark .hover\:bg-gray-100:hover { background-color: #1F2937 !important; }
+    html.dark .bg-gray-900 { background-color: #F9FAFB !important; color: #111827 !important; }
+    html.dark .bg-gray-900 .text-gray-300 { color: #4B5563 !important; }
+    html.dark .bg-gray-900 .text-gray-400 { color: #6B7280 !important; }
+    html.dark .hover\:bg-gray-800:hover { background-color: #E5E7EB !important; }
+    html.dark input, html.dark select, html.dark textarea {
+      background-color: #1F2937 !important;
+      color: #F9FAFB !important;
+      border-color: #374151 !important;
+    }
+    html.dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #374151; }
   </style>
 </head>
 <body class="flex flex-col">
+
+  <!-- ==================== SCHERMATA BLOCCO FACE ID ==================== -->
+  <div id="biometric-lock-screen" class="hidden fixed inset-0 z-[60] bg-[#F9FAFB] flex flex-col items-center justify-center p-6 text-center">
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm w-full max-w-xs p-8 space-y-5">
+      <div class="w-12 h-12 rounded-2xl bg-gray-900 text-white flex items-center justify-center font-bold text-xl mx-auto">N</div>
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900">Nexo Bloccato</h2>
+        <p class="text-xs text-gray-500 mt-1">Usa Face ID per accedere alle tue finanze</p>
+      </div>
+      <button onclick="unlockWithFaceID()" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition">
+        <i data-lucide="scan-face" class="w-4 h-4"></i> Sblocca con Face ID
+      </button>
+      <p id="biometric-error" class="text-xs text-red-600 hidden"></p>
+      <button onclick="logoutFromLock()" class="text-xs text-gray-400 hover:text-gray-700 underline">Accedi con email e password</button>
+    </div>
+  </div>
 
   <!-- ==================== SCHERMATA LOGIN ==================== -->
   <div id="auth-screen" class="fixed inset-0 z-50 bg-[#F9FAFB] flex items-center justify-center p-4 overflow-y-auto">
@@ -86,6 +130,7 @@
         <button onclick="switchTab('dashboard')" data-nav="dashboard" title="Dashboard" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></button>
         <button onclick="switchTab('transactions')" data-nav="transactions" title="Transazioni" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="arrow-left-right" class="w-4 h-4"></i></button>
         <button onclick="switchTab('recurring')" data-nav="recurring" title="Ricorrenze" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="repeat" class="w-4 h-4"></i></button>
+        <button onclick="switchTab('goals')" data-nav="goals" title="Obiettivi" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="target" class="w-4 h-4"></i></button>
         <button onclick="switchTab('simulator')" data-nav="simulator" title="Proiezioni" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="trending-up" class="w-4 h-4"></i></button>
         <button onclick="switchTab('import')" data-nav="import" title="Importa Banca (IA)" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="file-up" class="w-4 h-4"></i></button>
         <button onclick="switchTab('ai')" data-nav="ai" title="Assistente IA" class="nav-btn p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"><i data-lucide="sparkles" class="w-4 h-4"></i></button>
@@ -123,9 +168,15 @@
             <span class="hidden md:inline">›</span>
             <span id="breadcrumb-title" class="font-semibold text-gray-900 text-sm md:text-xs">Dashboard</span>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 md:gap-2">
+            <button onclick="togglePrivacyMode()" id="btn-privacy" title="Modalità Privacy" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+            <button onclick="toggleDarkMode()" id="btn-theme" title="Modalità Notte" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition">
+              <i data-lucide="moon" class="w-4 h-4"></i>
+            </button>
             <button onclick="openAccountModal()" class="lg:hidden text-xs font-medium px-2.5 py-1.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">+ Conto</button>
-            <button onclick="openTxModal()" class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition">
+            <button onclick="openTxModal()" class="bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nuovo
             </button>
           </div>
@@ -220,6 +271,25 @@
               </div>
             </div>
 
+            <!-- Navigazione Mese + Riepilogo Mensile -->
+            <div class="bg-white border border-gray-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-1.5">
+                <button onclick="changeTxMonth(-1)" class="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600" title="Mese precedente">
+                  <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                </button>
+                <span id="tx-month-label" class="text-xs font-semibold text-gray-900 min-w-[115px] text-center capitalize">Mese</span>
+                <button onclick="changeTxMonth(1)" class="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600" title="Mese successivo">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+                <button onclick="toggleTxAllMonths()" id="tx-all-months-btn" class="ml-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Tutti</button>
+              </div>
+              <div class="flex items-center gap-4 text-xs">
+                <div><span class="text-gray-400">Entrate:</span> <strong id="tx-sum-in" class="text-emerald-600">+€ 0,00</strong></div>
+                <div><span class="text-gray-400">Uscite:</span> <strong id="tx-sum-out" class="text-red-600">-€ 0,00</strong></div>
+                <div><span class="text-gray-400">Netto:</span> <strong id="tx-sum-net" class="text-gray-900">€ 0,00</strong></div>
+              </div>
+            </div>
+
             <div class="bg-white border border-gray-200 rounded-xl p-3 flex flex-wrap gap-2">
               <input type="text" id="filter-search" oninput="renderTransactions()" placeholder="Cerca descrizione o categoria..." class="flex-1 min-w-[180px] text-xs px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-900" />
               <select id="filter-account" onchange="renderTransactions()" class="text-xs px-3 py-2 border border-gray-200 rounded-lg bg-white">
@@ -294,7 +364,32 @@
             <div id="recurring-list" class="space-y-2"></div>
           </section>
 
-          <!-- ========== TAB 4: PROIEZIONI PATRIMONIO & DEBITI ========== -->
+          <!-- ========== TAB 4: OBIETTIVI DI RISPARMIO ========== -->
+          <section id="tab-goals" class="hidden space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900">Obiettivi di Risparmio</h2>
+                <p class="text-xs text-gray-500">Traccia i tuoi traguardi e scopri quanto accantonare ogni mese.</p>
+              </div>
+            </div>
+
+            <form id="goal-form" class="bg-white border border-gray-200 rounded-2xl p-5 grid grid-cols-1 md:grid-cols-4 gap-3">
+              <input type="text" id="goal-name" required placeholder="Nome obiettivo (es. Moto, Viaggio, Fondo Emergenza)" class="md:col-span-2 text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              <input type="number" step="0.01" id="goal-target" required placeholder="Obiettivo (€)" class="text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              <input type="number" step="0.01" id="goal-saved" value="0" placeholder="Già accantonati (€)" class="text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              <div class="md:col-span-2">
+                <label class="block text-[10px] text-gray-400 mb-0.5">Data Target (opzionale)</label>
+                <input type="date" id="goal-date" class="w-full text-xs px-3 py-2 border border-gray-200 rounded-lg" />
+              </div>
+              <div class="md:col-span-2 flex items-end">
+                <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium py-2.5 rounded-lg">Aggiungi Obiettivo</button>
+              </div>
+            </form>
+
+            <div id="goals-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+          </section>
+
+          <!-- ========== TAB 5: PROIEZIONI PATRIMONIO & DEBITI ========== -->
           <section id="tab-simulator" class="hidden space-y-5">
             <div>
               <h2 class="text-xl font-semibold text-gray-900">Proiezione Patrimonio & Debiti</h2>
@@ -337,7 +432,7 @@
             <p class="text-[11px] text-gray-400">* Gli interessi sui conti remunerati vengono calcolati usando il tasso salvato su ogni singolo conto, già al netto della ritenuta fiscale italiana del 26%.</p>
           </section>
 
-          <!-- ========== TAB 5: IMPORTA BANCA CON IA ========== -->
+          <!-- ========== TAB 6: IMPORTA BANCA CON IA ========== -->
           <section id="tab-import" class="hidden space-y-5">
             <div>
               <h2 class="text-xl font-semibold text-gray-900">Importazione Smart (UniCredit & Trade Republic)</h2>
@@ -390,7 +485,7 @@
             </div>
           </section>
 
-          <!-- ========== TAB 6: ASSISTENTE IA ========== -->
+          <!-- ========== TAB 7: ASSISTENTE IA ========== -->
           <section id="tab-ai" class="hidden flex flex-col h-[calc(100dvh-10rem)]">
             <div class="mb-3">
               <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-indigo-600"></i> Assistente Finanziario IA</h2>
@@ -407,11 +502,20 @@
             </form>
           </section>
 
-          <!-- ========== TAB 7: IMPOSTAZIONI & RESET ========== -->
+          <!-- ========== TAB 8: IMPOSTAZIONI & SICUREZZA ========== -->
           <section id="tab-settings" class="hidden space-y-5 max-w-xl">
             <div>
               <h2 class="text-xl font-semibold text-gray-900">Impostazioni</h2>
-              <p class="text-xs text-gray-500">Configurazione IA, sessione e gestione reset dei dati</p>
+              <p class="text-xs text-gray-500">Configurazione IA, sicurezza Face ID e gestione reset dei dati</p>
+            </div>
+
+            <!-- Sicurezza Face ID -->
+            <div class="bg-white border border-gray-200 rounded-2xl p-5 flex items-center justify-between gap-4">
+              <div>
+                <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><i data-lucide="scan-face" class="w-4 h-4"></i> Blocco Face ID / Biometrico</h3>
+                <p id="faceid-status-desc" class="text-xs text-gray-500 mt-0.5">Richiedi Face ID ogni volta che apri l'app su questo dispositivo (richiede HTTPS).</p>
+              </div>
+              <button onclick="toggleFaceIDSetup()" id="btn-faceid-toggle" class="shrink-0 text-xs font-medium px-3.5 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition">Attiva</button>
             </div>
 
             <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
@@ -479,6 +583,7 @@
           <button onclick="switchTab('dashboard')" data-nav="dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Dashboard</button>
           <button onclick="switchTab('transactions')" data-nav="transactions" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"><i data-lucide="arrow-left-right" class="w-4 h-4"></i>Transazioni</button>
           <button onclick="switchTab('recurring')" data-nav="recurring" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"><i data-lucide="repeat" class="w-4 h-4"></i>Ricorrenze</button>
+          <button onclick="switchTab('goals')" data-nav="goals" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"><i data-lucide="target" class="w-4 h-4"></i>Obiettivi</button>
           <button onclick="switchTab('simulator')" data-nav="simulator" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"><i data-lucide="trending-up" class="w-4 h-4"></i>Proiezioni</button>
           <button onclick="switchTab('import')" data-nav="import" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"><i data-lucide="file-up" class="w-4 h-4"></i>Importa Banca</button>
           <button onclick="switchTab('ai')" data-nav="ai" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"><i data-lucide="sparkles" class="w-4 h-4"></i>Assistente IA</button>
@@ -492,7 +597,7 @@
     </main>
   </div>
 
-  <!-- ==================== MODALE CONTO (NUOVO / MODIFICA) ==================== -->
+  <!-- ==================== MODALE CONTO (NUOVO / MODIFICA + COLORE) ==================== -->
   <div id="account-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center">
@@ -518,6 +623,11 @@
             <label class="block text-xs text-gray-500 mb-1">Tasso lordo % (es. 2.5)</label>
             <input type="number" step="0.01" id="acc-rate" value="0" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg" />
           </div>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1.5">Colore Card</label>
+          <input type="hidden" id="acc-color" value="" />
+          <div id="acc-color-swatches" class="flex flex-wrap gap-2"></div>
         </div>
         <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 rounded-lg">Salva Conto</button>
         <button type="button" id="acc-delete-btn" onclick="deleteAccountFromModal()" class="hidden w-full bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium py-2.5 rounded-lg transition">Elimina questo conto</button>
@@ -577,6 +687,15 @@
     let simChart = null;
     window.chartRangeDays = 30;
 
+    // Stato UI locale
+    let isDarkMode = localStorage.getItem('nexo_dark_mode') === 'true';
+    let isPrivacyMode = localStorage.getItem('nexo_privacy_mode') === 'true';
+    let accountColors = JSON.parse(localStorage.getItem('nexo_acc_colors') || '{}');
+    let savingsGoals = JSON.parse(localStorage.getItem('nexo_goals') || '[]');
+    let txSelectedMonth = null; // 'YYYY-MM' o 'all'
+
+    const COLOR_SWATCHES = ['', '#EF4444', '#3B82F6', '#6366F1', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#111827'];
+
     const CAT_META = {
       cash:        { label: 'Liquidità',    color: '#3B82F6' },
       investments: { label: 'Investimenti', color: '#6366F1' },
@@ -585,7 +704,10 @@
       debt:        { label: 'Debiti',       color: '#EF4444' }
     };
 
-    const fmtEur = (n) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(n) || 0);
+    const fmtEur = (n) => {
+      if (isPrivacyMode) return '•••• €';
+      return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Number(n) || 0);
+    };
     const fmtDateIT = (iso) => {
       if (!iso || !iso.includes('-')) return iso || '-';
       const [y, m, d] = iso.split('-');
@@ -596,7 +718,133 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
 
-    // Fix iOS: evita che la tastiera lasci l'HUD spostato sotto la barra di stato
+    // ==================== TEMA NOTTE & PRIVACY ====================
+    function applyTheme() {
+      document.documentElement.classList.toggle('dark', isDarkMode);
+      const meta = document.getElementById('meta-theme-color');
+      if (meta) meta.setAttribute('content', isDarkMode ? '#111827' : '#ffffff');
+      const btn = document.getElementById('btn-theme');
+      if (btn) btn.innerHTML = `<i data-lucide="${isDarkMode ? 'sun' : 'moon'}" class="w-4 h-4"></i>`;
+      lucide.createIcons();
+    }
+
+    function toggleDarkMode() {
+      isDarkMode = !isDarkMode;
+      localStorage.setItem('nexo_dark_mode', isDarkMode);
+      applyTheme();
+      if (isAppInitialized) { renderDashboard(); runProjection(); }
+    }
+
+    function applyPrivacyIcon() {
+      const btn = document.getElementById('btn-privacy');
+      if (btn) btn.innerHTML = `<i data-lucide="${isPrivacyMode ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+      lucide.createIcons();
+    }
+
+    function togglePrivacyMode() {
+      isPrivacyMode = !isPrivacyMode;
+      localStorage.setItem('nexo_privacy_mode', isPrivacyMode);
+      applyPrivacyIcon();
+      if (isAppInitialized) {
+        renderSidebar();
+        renderDashboard();
+        renderTransactions();
+        renderRecurring();
+        renderGoals();
+        runProjection();
+      }
+    }
+
+    // ==================== FACE ID (WEBAUTHN) ====================
+    function updateFaceIDButtonUI() {
+      const enabled = !!localStorage.getItem('nexo_webauthn_id');
+      const btn = document.getElementById('btn-faceid-toggle');
+      const desc = document.getElementById('faceid-status-desc');
+      if (!btn) return;
+      if (enabled) {
+        btn.textContent = 'Disattiva';
+        btn.className = 'shrink-0 text-xs font-medium px-3.5 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition';
+        desc.textContent = 'Blocco Face ID attivo su questo dispositivo.';
+      } else {
+        btn.textContent = 'Attiva';
+        btn.className = 'shrink-0 text-xs font-medium px-3.5 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition';
+        desc.textContent = 'Richiedi Face ID ogni volta che apri l\'app su questo dispositivo (richiede HTTPS).';
+      }
+    }
+
+    async function toggleFaceIDSetup() {
+      if (localStorage.getItem('nexo_webauthn_id')) {
+        localStorage.removeItem('nexo_webauthn_id');
+        updateFaceIDButtonUI();
+        return alert('Blocco Face ID disattivato.');
+      }
+
+      if (!window.PublicKeyCredential) {
+        return alert('Face ID / WebAuthn non supportato su questo browser o connessione non HTTPS.');
+      }
+
+      try {
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+        const userId = new TextEncoder().encode(currentUser?.id || 'nexo-user');
+
+        const cred = await navigator.credentials.create({
+          publicKey: {
+            challenge,
+            rp: { name: 'Nexo Finanze', id: window.location.hostname },
+            user: { id: userId, name: currentUser?.email || 'utente@nexo', displayName: 'Nexo' },
+            pubKeyCredParams: [{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }],
+            authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+            timeout: 60000
+          }
+        });
+
+        const rawIdB64 = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+        localStorage.setItem('nexo_webauthn_id', rawIdB64);
+        updateFaceIDButtonUI();
+        alert('Face ID attivato! Alla prossima apertura ti verrà chiesto per sbloccare l\'app.');
+      } catch (err) {
+        alert('Impossibile attivare Face ID: ' + err.message);
+      }
+    }
+
+    async function unlockWithFaceID() {
+      const errEl = document.getElementById('biometric-error');
+      errEl.classList.add('hidden');
+      const storedId = localStorage.getItem('nexo_webauthn_id');
+      if (!storedId) {
+        document.getElementById('biometric-lock-screen').classList.add('hidden');
+        return;
+      }
+
+      try {
+        const rawId = Uint8Array.from(atob(storedId), c => c.charCodeAt(0));
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+
+        await navigator.credentials.get({
+          publicKey: {
+            challenge,
+            allowCredentials: [{ id: rawId, type: 'public-key' }],
+            userVerification: 'required',
+            timeout: 60000
+          }
+        });
+
+        document.getElementById('biometric-lock-screen').classList.add('hidden');
+      } catch (err) {
+        errEl.textContent = 'Verifica annullata o non riuscita. Riprova.';
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    async function logoutFromLock() {
+      localStorage.removeItem('nexo_webauthn_id');
+      document.getElementById('biometric-lock-screen').classList.add('hidden');
+      await logout();
+    }
+
+    // ==================== FIX VIEWPORT iOS ====================
     function resetIOSViewport() {
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
@@ -611,6 +859,8 @@
 
     function refreshTodayDates() {
       const todayISO = getTodayISO();
+      if (!txSelectedMonth) txSelectedMonth = todayISO.slice(0, 7);
+
       const niceDate = new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
       const el = document.getElementById('dash-today-date');
       if (el) el.textContent = niceDate;
@@ -629,8 +879,10 @@
 
     // ==================== AUTH & AVVIO ====================
     async function init() {
-      lucide.createIcons();
+      applyTheme();
+      applyPrivacyIcon();
       refreshTodayDates();
+      updateFaceIDButtonUI();
       document.getElementById('setting-gemini-key').value = localStorage.getItem('gemini_api_key') || '';
 
       const { data: { session } } = await sb.auth.getSession();
@@ -674,6 +926,15 @@
       document.getElementById('app-screen').classList.remove('hidden');
       document.getElementById('settings-user-email').textContent = user.email;
       refreshTodayDates();
+      updateFaceIDButtonUI();
+
+      // Se Face ID è attivo, mostra la schermata di blocco prima di mostrare i dati
+      if (localStorage.getItem('nexo_webauthn_id')) {
+        document.getElementById('biometric-lock-screen').classList.remove('hidden');
+        lucide.createIcons();
+        unlockWithFaceID();
+      }
+
       await loadAllData();
       await applyDueScheduledTransactions();
       await applyDueRecurring();
@@ -695,11 +956,11 @@
       renderDashboard();
       renderTransactions();
       renderRecurring();
+      renderGoals();
       runProjection();
       lucide.createIcons();
     }
 
-    // Applica automaticamente le transazioni programmate la cui data è arrivata
     async function applyDueScheduledTransactions() {
       const todayISO = getTodayISO();
       const due = transactions.filter(t => t.source === 'scheduled' && t.date <= todayISO);
@@ -734,7 +995,8 @@
       document.getElementById(`tab-${tab}`).classList.remove('hidden');
       const titles = {
         dashboard: 'Dashboard', transactions: 'Transazioni', recurring: 'Ricorrenze',
-        import: 'Importa Banca', simulator: 'Proiezioni', ai: 'Assistente IA', settings: 'Impostazioni'
+        goals: 'Obiettivi', import: 'Importa Banca', simulator: 'Proiezioni',
+        ai: 'Assistente IA', settings: 'Impostazioni'
       };
       document.getElementById('breadcrumb-title').textContent = titles[tab] || tab;
       document.querySelectorAll('.nav-btn').forEach(b => {
@@ -753,6 +1015,10 @@
         document.getElementById(`sf-${k}`).className = k === f ? 'py-1 rounded-md bg-white shadow-sm text-gray-900' : 'py-1 rounded-md text-gray-500';
       });
       renderSidebar();
+    }
+
+    function getAccountColor(acc) {
+      return accountColors[acc.id] || CAT_META[acc.category]?.color || '#6B7280';
     }
 
     function renderSidebar() {
@@ -783,7 +1049,10 @@
                 <div class="mt-1 space-y-0.5">
                   ${list.map(acc => `
                     <div class="group flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-gray-50 text-xs">
-                      <span class="text-gray-700 truncate">${acc.name}${Number(acc.interest_rate) > 0 ? ` <span class="text-[10px] text-blue-500">${acc.interest_rate}%</span>` : ''}</span>
+                      <span class="flex items-center gap-1.5 text-gray-700 truncate">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:${getAccountColor(acc)}"></span>
+                        <span class="truncate">${acc.name}${Number(acc.interest_rate) > 0 ? ` <span class="text-[10px] text-blue-500">${acc.interest_rate}%</span>` : ''}</span>
+                      </span>
                       <div class="flex items-center gap-1.5">
                         <span class="font-medium ${acc.category === 'debt' ? 'text-red-600' : 'text-gray-900'}">${fmtEur(acc.balance)}</span>
                         <button onclick="openEditAccountModal('${acc.id}')" title="Modifica" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-800">✎</button>
@@ -797,7 +1066,7 @@
           }).join('');
     }
 
-    // ==================== DASHBOARD (STILE TRADE REPUBLIC + FINESTRELLE CONTI) ====================
+    // ==================== DASHBOARD ====================
     function renderDashboard() {
       const assetsSum = accounts.filter(a => a.category !== 'debt').reduce((s, a) => s + Number(a.balance), 0);
       const debtsSum = accounts.filter(a => a.category === 'debt').reduce((s, a) => s + Number(a.balance), 0);
@@ -814,7 +1083,7 @@
         debtBadge.classList.add('hidden');
       }
 
-      // Finestrelle conti in Dashboard
+      // Finestrelle conti personalizzate
       const grid = document.getElementById('dash-accounts-grid');
       const netCard = `
         <div class="bg-gray-900 text-white rounded-xl p-4 flex flex-col justify-between">
@@ -828,12 +1097,13 @@
 
       const accCards = accounts.map(acc => {
         const meta = CAT_META[acc.category] || { label: acc.category, color: '#6B7280' };
+        const customColor = getAccountColor(acc);
         const isDebt = acc.category === 'debt';
         return `
-          <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-between hover:border-gray-300 transition">
+          <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col justify-between hover:border-gray-300 transition" style="border-top: 3px solid ${customColor}">
             <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-1.5 min-w-0">
-                <span class="w-2 h-2 rounded-full shrink-0" style="background:${meta.color}"></span>
+                <span class="w-2 h-2 rounded-full shrink-0" style="background:${customColor}"></span>
                 <span class="text-xs font-medium text-gray-600 truncate">${acc.name}</span>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
@@ -841,7 +1111,7 @@
                 <button onclick="deleteAccount('${acc.id}')" title="Elimina" class="text-gray-400 hover:text-red-600 text-xs leading-none">✕</button>
               </div>
             </div>
-            <p class="text-lg md:text-xl font-bold mt-2 ${isDebt ? 'text-red-600' : 'text-gray-900'}">${isDebt ? '-' : ''}${fmtEur(acc.balance)}</p>
+            <p class="text-lg md:text-xl font-bold mt-2 ${isDebt ? 'text-red-600' : 'text-gray-900'}">${isDebt && !isPrivacyMode ? '-' : ''}${fmtEur(acc.balance)}</p>
             <div class="flex items-center justify-between mt-1">
               <span class="text-[10px] text-gray-400">${meta.label}</span>
               ${Number(acc.interest_rate) > 0 ? `<span class="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">${acc.interest_rate}%</span>` : ''}
@@ -852,7 +1122,6 @@
 
       grid.innerHTML = netCard + accCards;
 
-      // Flusso mese (esclude movimenti futuri programmati)
       const todayISO = getTodayISO();
       const nowYM = todayISO.slice(0, 7);
       const monthTx = transactions.filter(t => t.date.startsWith(nowYM) && t.source !== 'scheduled' && t.date <= todayISO);
@@ -860,9 +1129,9 @@
       const mOut = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
       const delta = mIn - mOut;
 
-      document.getElementById('dash-month-in').textContent = `+${fmtEur(mIn)}`;
-      document.getElementById('dash-month-out').textContent = `-${fmtEur(mOut)}`;
-      document.getElementById('dash-monthly-delta').innerHTML = `<span class="${delta >= 0 ? 'text-emerald-600' : 'text-red-600'} font-medium">${delta >= 0 ? '+' : ''}${fmtEur(delta)}</span> flusso netto questo mese`;
+      document.getElementById('dash-month-in').textContent = isPrivacyMode ? '•••• €' : `+${fmtEur(mIn)}`;
+      document.getElementById('dash-month-out').textContent = isPrivacyMode ? '•••• €' : `-${fmtEur(mOut)}`;
+      document.getElementById('dash-monthly-delta').innerHTML = `<span class="${delta >= 0 ? 'text-emerald-600' : 'text-red-600'} font-medium">${isPrivacyMode ? '•••• €' : (delta >= 0 ? '+' : '') + fmtEur(delta)}</span> flusso netto questo mese`;
 
       const catTotals = {};
       accounts.filter(a => a.category !== 'debt').forEach(a => {
@@ -898,7 +1167,7 @@
         `;
       }).join('');
 
-      // Grafico stile Trade Republic (ignora i movimenti programmati futuri)
+      // Grafico stile Trade Republic
       let runningCap = assetsSum;
       const txByDate = {};
 
@@ -949,7 +1218,7 @@
             },
             {
               label: 'Inizio periodo', data: tempPoints.map(() => startVal),
-              borderColor: '#D1D5DB', borderDash: [4, 4], borderWidth: 1, pointRadius: 0, fill: false
+              borderColor: isDarkMode ? '#374151' : '#D1D5DB', borderDash: [4, 4], borderWidth: 1, pointRadius: 0, fill: false
             }
           ]
         },
@@ -962,6 +1231,7 @@
               filter: item => item.datasetIndex === 0,
               callbacks: {
                 label: c => {
+                  if (isPrivacyMode) return '•••• €';
                   const diff = c.raw - startVal;
                   return `${fmtEur(c.raw)} (${diff >= 0 ? '+' : ''}${fmtEur(diff)})`;
                 }
@@ -987,12 +1257,22 @@
       renderDashboard();
     }
 
-    // ==================== GESTIONE CONTI (NUOVO, MODIFICA, ELIMINA) ====================
+    // ==================== GESTIONE CONTI + COLORE CARD ====================
+    function renderColorSwatches(selectedColor) {
+      document.getElementById('acc-color').value = selectedColor || '';
+      document.getElementById('acc-color-swatches').innerHTML = COLOR_SWATCHES.map(c => {
+        const isSel = (selectedColor || '') === c;
+        const bg = c ? `background:${c}` : 'background:linear-gradient(135deg,#e5e7eb 50%,#9ca3af 50%)';
+        return `<button type="button" onclick="renderColorSwatches('${c}')" title="${c || 'Predefinito'}" style="${bg}" class="w-6 h-6 rounded-full transition ${isSel ? 'ring-2 ring-offset-2 ring-gray-900 scale-110' : 'opacity-80 hover:opacity-100'}"></button>`;
+      }).join('');
+    }
+
     function openAccountModal() {
       document.getElementById('account-form').reset();
       document.getElementById('acc-edit-id').value = '';
       document.getElementById('account-modal-title').textContent = 'Nuovo Conto / Asset';
       document.getElementById('acc-delete-btn').classList.add('hidden');
+      renderColorSwatches('');
       document.getElementById('account-modal').classList.remove('hidden');
     }
 
@@ -1006,6 +1286,7 @@
       document.getElementById('acc-rate').value = acc.interest_rate || 0;
       document.getElementById('account-modal-title').textContent = 'Modifica Conto';
       document.getElementById('acc-delete-btn').classList.remove('hidden');
+      renderColorSwatches(accountColors[acc.id] || '');
       document.getElementById('account-modal').classList.remove('hidden');
     }
 
@@ -1017,18 +1298,36 @@
     document.getElementById('account-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const editId = document.getElementById('acc-edit-id').value;
+      const chosenColor = document.getElementById('acc-color').value;
       const payload = {
         name: document.getElementById('acc-name').value.trim(),
         category: document.getElementById('acc-category').value,
         balance: parseFloat(document.getElementById('acc-balance').value) || 0,
         interest_rate: parseFloat(document.getElementById('acc-rate').value) || 0
       };
-      const { error } = editId
-        ? await sb.from('accounts').update(payload).eq('id', editId)
-        : await sb.from('accounts').insert(payload);
 
-      if (!error) { e.target.reset(); closeModal('account-modal'); await loadAllData(); }
-      else alert(error.message);
+      let savedId = editId;
+      let error = null;
+
+      if (editId) {
+        const res = await sb.from('accounts').update(payload).eq('id', editId);
+        error = res.error;
+      } else {
+        const res = await sb.from('accounts').insert(payload).select('id').single();
+        error = res.error;
+        if (res.data) savedId = res.data.id;
+      }
+
+      if (!error) {
+        if (savedId) {
+          if (chosenColor) accountColors[savedId] = chosenColor;
+          else delete accountColors[savedId];
+          localStorage.setItem('nexo_acc_colors', JSON.stringify(accountColors));
+        }
+        e.target.reset();
+        closeModal('account-modal');
+        await loadAllData();
+      } else alert(error.message);
     });
 
     async function deleteAccountFromModal() {
@@ -1045,6 +1344,8 @@
         alert('Impossibile eliminare il conto: ' + error.message);
         return false;
       }
+      delete accountColors[id];
+      localStorage.setItem('nexo_acc_colors', JSON.stringify(accountColors));
       await loadAllData();
       return true;
     }
@@ -1058,7 +1359,20 @@
       document.getElementById('filter-account').innerHTML = '<option value="all">Tutti i conti</option>' + opts;
     }
 
-    // ==================== TRANSAZIONI (NUOVA, MODIFICA, PROGRAMMATE) ====================
+    // ==================== TRANSAZIONI + NAVIGAZIONE PER MESE ====================
+    function changeTxMonth(delta) {
+      if (txSelectedMonth === 'all') txSelectedMonth = getTodayISO().slice(0, 7);
+      const [y, m] = txSelectedMonth.split('-').map(Number);
+      const d = new Date(y, m - 1 + delta, 1);
+      txSelectedMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      renderTransactions();
+    }
+
+    function toggleTxAllMonths() {
+      txSelectedMonth = txSelectedMonth === 'all' ? getTodayISO().slice(0, 7) : 'all';
+      renderTransactions();
+    }
+
     function openTxModal() {
       if (accounts.length === 0) { alert('Crea prima almeno un conto.'); return openAccountModal(); }
       document.getElementById('tx-form').reset();
@@ -1170,19 +1484,38 @@
       const fAcc = document.getElementById('filter-account').value;
       const fType = document.getElementById('filter-type').value;
 
+      // Label mese
+      const allBtn = document.getElementById('tx-all-months-btn');
+      if (txSelectedMonth === 'all') {
+        document.getElementById('tx-month-label').textContent = 'Tutti i mesi';
+        allBtn.className = 'ml-1 text-xs px-2.5 py-1.5 rounded-lg bg-gray-900 text-white';
+      } else {
+        const [y, m] = txSelectedMonth.split('-').map(Number);
+        document.getElementById('tx-month-label').textContent = new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' }).format(new Date(y, m - 1, 1));
+        allBtn.className = 'ml-1 text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50';
+      }
+
       const list = transactions.filter(t => {
+        if (txSelectedMonth !== 'all' && !t.date.startsWith(txSelectedMonth)) return false;
         if (fAcc !== 'all' && t.account_id !== fAcc && t.target_account_id !== fAcc) return false;
         if (fType !== 'all' && t.type !== fType) return false;
         if (q && !(t.description || '').toLowerCase().includes(q) && !(t.category || '').toLowerCase().includes(q)) return false;
         return true;
       });
 
+      const sumIn = list.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+      const sumOut = list.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+      const sumNet = sumIn - sumOut;
+      document.getElementById('tx-sum-in').textContent = isPrivacyMode ? '•••• €' : `+${fmtEur(sumIn)}`;
+      document.getElementById('tx-sum-out').textContent = isPrivacyMode ? '•••• €' : `-${fmtEur(sumOut)}`;
+      document.getElementById('tx-sum-net').textContent = isPrivacyMode ? '•••• €' : `${sumNet >= 0 ? '+' : ''}${fmtEur(sumNet)}`;
+
       const accMap = Object.fromEntries(accounts.map(a => [a.id, a.name]));
       document.getElementById('tx-table-body').innerHTML = list.length === 0
-        ? `<tr><td colspan="7" class="p-8 text-center text-xs text-gray-400">Nessuna transazione trovata.</td></tr>`
+        ? `<tr><td colspan="7" class="p-8 text-center text-xs text-gray-400">Nessuna transazione in questo periodo.</td></tr>`
         : list.map(t => {
             const isScheduled = t.source === 'scheduled';
-            const sign = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : '⇄ ';
+            const sign = isPrivacyMode ? '' : (t.type === 'income' ? '+' : t.type === 'expense' ? '-' : '⇄ ');
             const color = t.type === 'income' ? 'text-emerald-600' : t.type === 'expense' ? 'text-gray-900' : 'text-indigo-600';
             const accLabel = t.type === 'transfer' ? `${accMap[t.account_id] || '?'} → ${accMap[t.target_account_id] || '?'}` : (accMap[t.account_id] || '?');
             return `
@@ -1238,6 +1571,85 @@
       if (!confirm(`Eliminare ${ids.length} transazioni e ripristinare i saldi?`)) return;
       for (const id of ids) await revertAndDeleteTx(id);
       await loadAllData();
+    }
+
+    // ==================== OBIETTIVI DI RISPARMIO ====================
+    document.getElementById('goal-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      savingsGoals.push({
+        id: 'goal_' + Date.now(),
+        name: document.getElementById('goal-name').value.trim(),
+        target: parseFloat(document.getElementById('goal-target').value) || 0,
+        saved: parseFloat(document.getElementById('goal-saved').value) || 0,
+        date: document.getElementById('goal-date').value || ''
+      });
+      localStorage.setItem('nexo_goals', JSON.stringify(savingsGoals));
+      e.target.reset();
+      renderGoals();
+    });
+
+    function addToGoal(id) {
+      const g = savingsGoals.find(x => x.id === id);
+      if (!g) return;
+      const val = prompt(`Quanto vuoi aggiungere a "${g.name}"? (usa il segno - per togliere)`);
+      if (val === null) return;
+      const num = parseFloat(val.replace(',', '.'));
+      if (isNaN(num)) return;
+      g.saved = Math.max(0, Math.round((g.saved + num) * 100) / 100);
+      localStorage.setItem('nexo_goals', JSON.stringify(savingsGoals));
+      renderGoals();
+    }
+
+    function deleteGoal(id) {
+      if (!confirm('Eliminare questo obiettivo?')) return;
+      savingsGoals = savingsGoals.filter(x => x.id !== id);
+      localStorage.setItem('nexo_goals', JSON.stringify(savingsGoals));
+      renderGoals();
+    }
+
+    function renderGoals() {
+      const container = document.getElementById('goals-list');
+      if (!container) return;
+      if (savingsGoals.length === 0) {
+        container.innerHTML = `<p class="text-xs text-gray-400 col-span-full">Nessun obiettivo ancora. Creane uno qui sopra!</p>`;
+        return;
+      }
+
+      const now = new Date();
+      container.innerHTML = savingsGoals.map(g => {
+        const pct = g.target > 0 ? Math.min(100, Math.round((g.saved / g.target) * 100)) : 0;
+        const remaining = Math.max(0, g.target - g.saved);
+        let monthlyHint = '';
+        if (g.date && remaining > 0) {
+          const end = new Date(g.date + 'T00:00:00');
+          const months = Math.max(1, (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth()));
+          monthlyHint = `Servono ~${fmtEur(remaining / months)}/mese entro il ${fmtDateIT(g.date)}`;
+        } else if (remaining === 0) {
+          monthlyHint = 'Obiettivo raggiunto!';
+        }
+
+        return `
+          <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h4 class="text-sm font-semibold text-gray-900">${g.name}</h4>
+                <p class="text-xs text-gray-500 mt-0.5">${fmtEur(g.saved)} su ${fmtEur(g.target)}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="addToGoal('${g.id}')" class="text-[11px] font-medium px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg">+ Aggiorna</button>
+                <button onclick="deleteGoal('${g.id}')" class="text-xs text-gray-400 hover:text-red-600">✕</button>
+              </div>
+            </div>
+            <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all ${pct >= 100 ? 'bg-emerald-500' : 'bg-indigo-600'}" style="width:${pct}%"></div>
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="font-semibold ${pct >= 100 ? 'text-emerald-600' : 'text-indigo-600'}">${pct}%</span>
+              <span class="text-gray-500">${monthlyHint}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // ==================== RICORRENZE EVOLUTE ====================
@@ -1353,7 +1765,7 @@
       if (applied > 0) await loadAllData();
     }
 
-    // ==================== PROIEZIONE MULTI-LINEA (NETTO 26% + PROGRAMMATE) ====================
+    // ==================== PROIEZIONE MULTI-LINEA ====================
     function runProjection() {
       const endDateStr = document.getElementById('proj-end-date').value;
       if (!endDateStr) return;
@@ -1415,7 +1827,6 @@
 
       snapshot('Oggi');
 
-      // Applica eventuali movimenti programmati che cadono nel resto del mese corrente
       scheduledTx.filter(t => t.date.startsWith(currentYM)).forEach(t => {
         applySimMove(t.type, t.amount, t.account_id, t.target_account_id);
       });
@@ -1425,7 +1836,6 @@
         const curYM = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
         const lbl = `${String(cur.getMonth() + 1).padStart(2, '0')}/${String(cur.getFullYear()).slice(2)}`;
 
-        // Ricorrenze attive nel mese curYM
         recurringRules.forEach(r => {
           if (!r.active) return;
           if (r.start_date && r.start_date.slice(0, 7) > curYM) return;
@@ -1433,12 +1843,10 @@
           applySimMove(r.type, r.amount, r.account_id, r.target_account_id);
         });
 
-        // Movimenti programmati futuri che cadono in curYM
         scheduledTx.filter(t => t.date.startsWith(curYM)).forEach(t => {
           applySimMove(t.type, t.amount, t.account_id, t.target_account_id);
         });
 
-        // Interessi composti: investimenti al rendimento stimato, conti remunerati al proprio tasso NETTO (74%)
         accounts.forEach(a => {
           if (a.category === 'investments' && simBalances[a.id] > 0) {
             simBalances[a.id] *= (1 + invRateMonthly);
@@ -1459,13 +1867,15 @@
 
       const ctx = document.getElementById('sim-chart').getContext('2d');
       if (simChart) simChart.destroy();
+      const totalBorder = isDarkMode ? '#F9FAFB' : '#111827';
+      const gridColor = isDarkMode ? '#1F2937' : '#F3F4F6';
       simChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels,
           datasets: [
-            { label: 'Portafoglio Totale', data: totalArr, borderColor: '#111827', backgroundColor: 'rgba(17,24,39,0.05)', borderWidth: 2.5, fill: true, tension: 0.25, pointRadius: 0 },
-            { label: 'Investimenti', data: invArr, borderColor: '#4F46E5', borderWidth: 2, fill: false, tension: 0.25, pointRadius: 0 },
+            { label: 'Portafoglio Totale', data: totalArr, borderColor: totalBorder, backgroundColor: isDarkMode ? 'rgba(249,250,251,0.06)' : 'rgba(17,24,39,0.05)', borderWidth: 2.5, fill: true, tension: 0.25, pointRadius: 0 },
+            { label: 'Investimenti', data: invArr, borderColor: '#6366F1', borderWidth: 2, fill: false, tension: 0.25, pointRadius: 0 },
             { label: 'Conto Remunerato', data: remArr, borderColor: '#3B82F6', borderWidth: 2, fill: false, tension: 0.25, pointRadius: 0 },
             { label: 'Debito Residuo', data: debtArr, borderColor: '#EF4444', borderDash: [5, 4], borderWidth: 2, fill: false, tension: 0.25, pointRadius: 0 }
           ]
@@ -1473,16 +1883,19 @@
         options: {
           responsive: true, maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
-          plugins: { tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmtEur(c.raw)}` } } },
+          plugins: {
+            legend: { labels: { color: isDarkMode ? '#D1D5DB' : '#374151', font: { size: 11 } } },
+            tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmtEur(c.raw)}` } }
+          },
           scales: {
-            x: { ticks: { maxTicksLimit: 8, font: { size: 10 } } },
-            y: { ticks: { font: { size: 10 }, callback: v => '€' + v } }
+            x: { grid: { color: gridColor }, ticks: { maxTicksLimit: 8, font: { size: 10 }, color: '#9CA3AF' } },
+            y: { grid: { color: gridColor }, ticks: { font: { size: 10 }, color: '#9CA3AF', callback: v => isPrivacyMode ? '•••' : '€' + v } }
           }
         }
       });
     }
 
-    // ==================== IMPORTAZIONE SMART CON TOLLERANZA ±3 GIORNI ====================
+    // ==================== IMPORTAZIONE SMART ====================
     async function parseBankFileWithAI() {
       const apiKey = localStorage.getItem('gemini_api_key');
       if (!apiKey) return alert('Inserisci prima la tua Gemini API Key nella scheda Impostazioni.');
@@ -1596,6 +2009,7 @@ Estrai TUTTE le transazioni dal file fornito. Restituisci SOLO un array JSON val
       const contextData = {
         oggi: getTodayISO(),
         conti: accounts.map(a => ({ nome: a.name, categoria: a.category, saldo: a.balance, tasso_lordo: a.interest_rate })),
+        obiettivi: savingsGoals,
         ricorrenze: recurringRules.filter(r => r.active).map(r => ({ desc: r.description, tipo: r.type, importo: r.amount, giorno: r.day_of_month, solo_proiezione: r.last_applied_month === 'PROJECTION_ONLY', fine: r.end_date })),
         ultime_50_transazioni: transactions.slice(0, 50).map(t => ({ data: t.date, tipo: t.type, importo: t.amount, cat: t.category, desc: t.description, programmata: t.source === 'scheduled' }))
       };
